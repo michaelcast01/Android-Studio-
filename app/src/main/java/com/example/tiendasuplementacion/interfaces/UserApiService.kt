@@ -1,6 +1,7 @@
 package com.example.tiendasuplementacion.interfaces
 
 import com.example.tiendasuplementacion.model.User
+import com.example.tiendasuplementacion.model.LoginResponse
 import retrofit2.http.*
 
 interface UserApiService {
@@ -19,4 +20,7 @@ interface UserApiService {
 
     @DELETE("/api/users/{id}")
     suspend fun deleteUser(@Path("id") id: Long)
+
+    @POST("/api/auth/login")
+    suspend fun login(@Body credentials: Map<String, String>): LoginResponse
 }

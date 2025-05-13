@@ -14,10 +14,10 @@ import com.example.tiendasuplementacion.viewmodel.CartViewModel
 
 @Composable
 fun CartScreen(
-    viewModel: CartViewModel = viewModel(),
+    cartViewModel: CartViewModel,
     onCheckout: () -> Unit
 ) {
-    val cartItems by viewModel.cartItems.collectAsState()
+    val cartItems by cartViewModel.cartItems.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Carrito de Compras", style = MaterialTheme.typography.titleLarge)
@@ -42,7 +42,7 @@ fun CartScreen(
                                 Text("Precio: \$${item.product.price * item.quantity}")
                             }
                             Button(onClick = {
-                                viewModel.removeFromCart(item.product.id)
+                                cartViewModel.removeFromCart(item.product.id)
                             }) {
                                 Text("Eliminar")
                             }
@@ -53,12 +53,12 @@ fun CartScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Total: \$${viewModel.getTotalPrice()}", style = MaterialTheme.typography.titleMedium)
+            Text("Total: \$${cartViewModel.getTotalPrice()}", style = MaterialTheme.typography.titleMedium)
 
             Button(
                 onClick = {
                     onCheckout()
-                    viewModel.clearCart()
+                    cartViewModel.clearCart()
                 },
                 modifier = Modifier.align(Alignment.End).padding(top = 8.dp)
             ) {

@@ -3,6 +3,8 @@ package com.example.tiendasuplementacion.viewmodel
 import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.Product
 import com.example.tiendasuplementacion.repository.ProductRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class ProductViewModel : ViewModel() {
@@ -10,16 +12,41 @@ class ProductViewModel : ViewModel() {
     private val _products = MutableLiveData<List<Product>>()
     val products: LiveData<List<Product>> = _products
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     fun fetchProducts() {
         viewModelScope.launch {
-            _products.value = repository.getAll()
+            try {
+                _products.value = repository.getAll()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error al cargar los productos: ${e.message}"
+            }
         }
     }
 
     fun createProduct(product: Product) {
         viewModelScope.launch {
-            repository.create(product)
-            fetchProducts()
+            try {
+                validateProduct(product)
+                repository.create(product)
+                fetchProducts()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error al crear el producto: ${e.message}"
+                throw e
+            }
+        }
+    }
+
+    private fun validateProduct(product: Product) {
+        when {
+            product.name.isBlank() -> throw IllegalArgumentException("El nombre no puede estar vacío")
+            product.description.isBlank() -> throw IllegalArgumentException("La descripción no puede estar vacía")
+            product.price <= 0 -> throw IllegalArgumentException("El precio debe ser mayor a 0")
+            product.stock < 0 -> throw IllegalArgumentException("El stock no puede ser negativo")
+            product.url_image.isBlank() -> throw IllegalArgumentException("La URL de la imagen no puede estar vacía")
         }
     }
 }

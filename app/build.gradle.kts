@@ -37,6 +37,21 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    // Añadir configuración para manejar la advertencia de ashmem
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/license.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/notice.txt"
+            excludes += "META-INF/ASL2.0"
+        }
+    }
 }
 
 dependencies {
@@ -57,6 +72,7 @@ dependencies {
     implementation(libs.retrofit) // Retrofit
     implementation(libs.retrofit.converter.gson) // Retrofit Converter Gson
     implementation(libs.okhttp) // OkHttp
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3") // OkHttp Logging Interceptor
 
     // Gson for JSON parsing
     implementation(libs.gson)
