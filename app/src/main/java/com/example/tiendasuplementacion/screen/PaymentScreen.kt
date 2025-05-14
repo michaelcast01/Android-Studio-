@@ -1,36 +1,167 @@
 package com.example.tiendasuplementacion.screen
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.runtime.livedata.observeAsState
-
-
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
-import com.example.tiendasuplementacion.component.GenericListScreen
+import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PaymentScreen(navController: NavController, viewModel: PaymentViewModel = viewModel()) {
+fun PaymentScreen(
+    navController: NavController,
+    viewModel: PaymentViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
+) {
     val payments by viewModel.payments.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val error by viewModel.error.observeAsState()
+    var showErrorDialog by remember { mutableStateOf(false) }
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
     }
 
-    GenericListScreen(
-        title = "Métodos de Pago",
-        items = payments,
-        onItemClick = {},
-        onCreateClick = { navController.navigate("paymentForm") }
-    ) { payment ->
-        Column(Modifier.padding(8.dp)) {
-            Text("Método: ${payment.method}")
+    LaunchedEffect(error) {
+        if (error != null) {
+            showErrorDialog = true
         }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f)
+                    )
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                "Métodos de Pago",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else if (payments.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No hay métodos de pago registrados",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    payments.forEach { payment ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(4.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = payment.method ?: "",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Nombre: ${payment.name ?: ""}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Activo",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (isAuthenticated == true) {
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate("paymentForm") {
+                        launchSingleTop = true
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar método de pago")
+            }
+        }
+    }
+
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showErrorDialog = false
+                viewModel.clearError()
+            },
+            title = { Text("Error") },
+            text = { Text(error ?: "Ha ocurrido un error") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showErrorDialog = false
+                        viewModel.clearError()
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 

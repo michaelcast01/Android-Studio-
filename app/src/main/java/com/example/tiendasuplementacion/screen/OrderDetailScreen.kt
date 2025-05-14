@@ -10,9 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.tiendasuplementacion.component.GenericListScreen
 import com.example.tiendasuplementacion.viewmodel.OrderDetailViewModel
-import com.example.tiendasuplementacion.model.OrderDetail
 
 @Composable
 fun OrderDetailScreen(navController: NavController, viewModel: OrderDetailViewModel = viewModel()) {

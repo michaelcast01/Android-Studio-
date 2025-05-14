@@ -7,12 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.SettingViewModel
-import com.example.tiendasuplementacion.component.GenericListScreen
 
 @Composable
 fun SettingsScreen(navController: NavController, viewModel: SettingViewModel = viewModel()) {

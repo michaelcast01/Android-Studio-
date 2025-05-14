@@ -1,17 +1,21 @@
 package com.example.tiendasuplementacion.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.repository.UserRepository
+import com.example.tiendasuplementacion.session.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = UserRepository()
-    private val _isAuthenticated = MutableStateFlow(false)
-    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated
+    private val _isAuthenticated = MutableStateFlow<Boolean?>(null)
+    val isAuthenticated: StateFlow<Boolean?> = _isAuthenticated
 
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
@@ -19,16 +23,17 @@ class AuthViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun login(username: String, password: String) {
+    fun login(email: String, password: String) {
         viewModelScope.launch {
             try {
                 _error.value = null
-                if (username.isBlank() || password.isBlank()) {
+                if (email.isBlank() || password.isBlank()) {
                     throw Exception("Por favor complete todos los campos")
                 }
-                val user = repository.login(username, password)
+                val user = repository.login(email, password)
                 _currentUser.value = user
                 _isAuthenticated.value = true
+                SessionManager.saveEmail(getApplication(), email)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -45,12 +50,13 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _error.value = null
-                if (user.username.isBlank() || user.password.isBlank() || user.email.isBlank()) {
+                if (user.email.isBlank() || user.password.isBlank()) {
                     throw Exception("Por favor complete todos los campos")
                 }
                 repository.create(user)
                 _currentUser.value = user
                 _isAuthenticated.value = true
+                SessionManager.saveEmail(getApplication(), user.email)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -59,9 +65,23 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    fun restoreSession() {
+        viewModelScope.launch {
+            val email = SessionManager.getEmail(getApplication()).first()
+            if (!email.isNullOrBlank()) {
+                _isAuthenticated.value = true
+            } else {
+                _isAuthenticated.value = false
+            }
+        }
+    }
+
     fun logout() {
-        _isAuthenticated.value = false
-        _currentUser.value = null
-        _error.value = null
+        viewModelScope.launch {
+            _isAuthenticated.value = false
+            _currentUser.value = null
+            _error.value = null
+            SessionManager.clearSession(getApplication())
+        }
     }
 }
