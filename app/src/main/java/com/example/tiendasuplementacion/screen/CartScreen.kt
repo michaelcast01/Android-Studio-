@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
+import coil.compose.rememberAsyncImagePainter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,10 +85,38 @@ fun CartScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                androidx.compose.foundation.Image(
+                                    painter = rememberAsyncImagePainter(item.product.url_image),
+                                    contentDescription = item.product.name,
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(item.product.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                                    Text("Cantidad: ${item.quantity}", style = MaterialTheme.typography.bodyMedium)
                                     Text("Precio: $${item.product.price * item.quantity}", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            if (item.quantity > 1) {
+                                                cartViewModel.updateQuantity(item.product.id, item.quantity - 1)
+                                            }
+                                        },
+                                        enabled = item.quantity > 1
+                                    ) {
+                                        Text("-")
+                                    }
+                                    Text("${item.quantity}", modifier = Modifier.padding(horizontal = 8.dp))
+                                    IconButton(
+                                        onClick = {
+                                            cartViewModel.updateQuantity(item.product.id, item.quantity + 1)
+                                        },
+                                        enabled = item.quantity < item.product.stock
+                                    ) {
+                                        Text("+")
+                                    }
                                 }
                                 IconButton(
                                     onClick = { cartViewModel.removeFromCart(item.product.id) },
@@ -105,6 +134,13 @@ fun CartScreen(
                 Text(
                     "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
                     style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.End)
+                )
+                val totalProductos = cartItems.sumOf { it.quantity }
+                Text(
+                    "Total de productos: $totalProductos",
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.End)
                 )
@@ -138,7 +174,10 @@ fun CartScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { navController.navigate("payments") { launchSingleTop = true } },
+                        onClick = {
+                            navController.navigate("payments") { launchSingleTop = true }
+                            cartViewModel.clearCart()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
