@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.viewmodel.ProductViewModel
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.model.Product
@@ -31,7 +32,6 @@ import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import com.example.tiendasuplementacion.model.CategoryProduct
 import com.example.tiendasuplementacion.model.Category
 import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
-import com.example.tiendasuplementacion.component.NetworkErrorBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +54,7 @@ fun ProductScreen(
     val error by productViewModel.error.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
+    val isAdmin = currentUser?.role_id == 2L
 
     LaunchedEffect(Unit) {
         productViewModel.fetchProducts()
@@ -122,12 +123,13 @@ fun ProductScreen(
                             }
                         },
                         categoryProducts = categoryProducts,
-                        categories = categories
+                        categories = categories,
+                        isAdmin = isAdmin
                     )
                 }
             }
         }
-        AnimatedVisibility(visible = cartItemCount > 0) {
+        AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != 2L) {
             FloatingActionButton(
                 onClick = { navController.navigate("cart") },
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -171,7 +173,8 @@ fun ProductCard(
     product: Product,
     onAddToCart: (Product) -> Unit,
     categoryProducts: List<CategoryProduct>,
-    categories: List<Category>
+    categories: List<Category>,
+    isAdmin: Boolean = false
 ) {
     val isOutOfStock = product.stock <= 0
     val categoryProduct = categoryProducts.find { it.product_id == product.id }
@@ -183,58 +186,55 @@ fun ProductCard(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(8.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOutOfStock) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
-        )
+        elevation = CardDefaults.cardElevation(4.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(16.dp)
         ) {
             AsyncImage(
                 model = product.url_image,
                 contentDescription = product.name,
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .clip(RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
-            category?.let {
-                Text(
-                    text = it.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
             Text(
-                text = "Precio: $${product.price}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Stock: ${product.stock}",
+                text = category?.name ?: "Sin categoría",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isOutOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = { onAddToCart(product) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                enabled = !isOutOfStock,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isOutOfStock) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
-                    contentColor = if (isOutOfStock) MaterialTheme.colorScheme.onSurface else Color.White
-                )
-            ) {
-                Text(if (isOutOfStock) "Sin stock" else "Añadir al carrito")
+            Text(
+                text = "$${product.price}",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = if (isOutOfStock) "Agotado" else "Stock: ${product.stock}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isOutOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (!isAdmin && !isOutOfStock) {
+                Button(
+                    onClick = { onAddToCart(product) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(Icons.Default.ShoppingCart, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Agregar al carrito")
+                }
             }
         }
     }

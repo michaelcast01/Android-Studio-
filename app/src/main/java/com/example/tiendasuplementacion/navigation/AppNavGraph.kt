@@ -40,11 +40,18 @@ fun AppNavGraph(
 ) {
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
-    val items = listOf(
-        NavBarItem("products", "Productos", Icons.Default.Store),
-        NavBarItem("cart", "Carrito", Icons.Default.ShoppingCart),
-        NavBarItem("payments", "Pagos", Icons.Default.Payment)
-    )
+    val items = if (currentUser?.role_id == 2L) {
+        listOf(
+            NavBarItem("products", "Productos", Icons.Default.Store),
+            NavBarItem("payments", "Pagos", Icons.Default.Payment)
+        )
+    } else {
+        listOf(
+            NavBarItem("products", "Productos", Icons.Default.Store),
+            NavBarItem("cart", "Carrito", Icons.Default.ShoppingCart),
+            NavBarItem("payments", "Pagos", Icons.Default.Payment)
+        )
+    }
 
     if (isAuthenticated == true) {
         Scaffold(
