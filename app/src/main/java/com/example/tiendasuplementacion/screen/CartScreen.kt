@@ -130,7 +130,9 @@ fun CartScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            if (cartItems.isNotEmpty()) {
                 Text(
                     "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
                     style = MaterialTheme.typography.titleLarge,
@@ -173,6 +175,20 @@ fun CartScreen(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Totales arriba de los botones
+                    Text(
+                        "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                    val totalProductos = cartItems.sumOf { it.quantity }
+                    Text(
+                        "Total de productos: $totalProductos",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.End)
+                    )
                     Button(
                         onClick = {
                             navController.navigate("payments") { launchSingleTop = true }
@@ -190,7 +206,6 @@ fun CartScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Confirmar Orden", color = Color.White)
                     }
-                    
                     OutlinedButton(
                         onClick = { navController.navigate("products") { launchSingleTop = true } },
                         modifier = Modifier.fillMaxWidth(),
