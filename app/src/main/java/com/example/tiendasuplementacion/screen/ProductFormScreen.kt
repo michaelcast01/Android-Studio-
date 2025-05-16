@@ -26,6 +26,7 @@ import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
 import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +34,8 @@ fun ProductFormScreen(
     navController: NavController,
     productViewModel: ProductViewModel = viewModel(),
     categoryViewModel: CategoryViewModel = viewModel(),
-    categoryProductViewModel: CategoryProductViewModel = viewModel()
+    categoryProductViewModel: CategoryProductViewModel = viewModel(),
+    productId: Long = 0L
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -45,6 +47,7 @@ fun ProductFormScreen(
     var errorMessage by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var expanded by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(productId != 0L) }
 
     val categories by categoryViewModel.categories.observeAsState(emptyList())
     val error by productViewModel.error.collectAsState()
@@ -53,6 +56,20 @@ fun ProductFormScreen(
 
     LaunchedEffect(Unit) {
         categoryViewModel.fetchCategories()
+        if (isEditing) {
+            try {
+                val product = productViewModel.getProductById(productId)
+                name = product.name
+                description = product.description
+                price = product.price.toString()
+                stock = product.stock.toString()
+                imageUrl = product.url_image
+                // TODO: Set selected category when available
+            } catch (e: Exception) {
+                errorMessage = "Error al cargar el producto: ${e.message}"
+                showError = true
+            }
+        }
     }
 
     LaunchedEffect(error) {
@@ -88,7 +105,7 @@ fun ProductFormScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Crear Producto",
+                    text = if (isEditing) "Editar Producto" else "Crear Producto",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -118,32 +135,24 @@ fun ProductFormScreen(
 
                 OutlinedTextField(
                     value = price,
-                    onValueChange = {
-                        if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) {
-                            price = it
-                        }
-                    },
+                    onValueChange = { price = it },
                     label = { Text("Precio") },
-                    leadingIcon = { Icon(Icons.Default.PriceChange, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    leadingIcon = { Icon(Icons.Default.AttachMoney, contentDescription = null) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
-                    isError = (price.isBlank() || price.toDoubleOrNull() ?: 0.0 <= 0) && showError,
+                    isError = price.isBlank() && showError,
                     shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = stock,
-                    onValueChange = {
-                        if (it.isEmpty() || it.matches(Regex("^\\d*$"))) {
-                            stock = it
-                        }
-                    },
+                    onValueChange = { stock = it },
                     label = { Text("Stock") },
-                    leadingIcon = { Icon(Icons.Default.Numbers, contentDescription = null) },
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    leadingIcon = { Icon(Icons.Default.Inventory, contentDescription = null) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
-                    isError = (stock.isBlank() || stock.toIntOrNull() ?: -1 < 0) && showError,
+                    isError = stock.isBlank() && showError,
                     shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -152,14 +161,13 @@ fun ProductFormScreen(
                     value = imageUrl,
                     onValueChange = { imageUrl = it },
                     label = { Text("URL de la imagen") },
-                    leadingIcon = { Icon(Icons.Default.AddPhotoAlternate, contentDescription = null) },
+                    leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = imageUrl.isBlank() && showError,
                     shape = RoundedCornerShape(16.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Category Dropdown
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = it },
@@ -170,11 +178,9 @@ fun ProductFormScreen(
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
-                        isError = selectedCategory == null && showError,
                         shape = RoundedCornerShape(16.dp)
                     )
 
@@ -184,57 +190,35 @@ fun ProductFormScreen(
                     ) {
                         categories.forEach { category ->
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        category.name,
-                                        fontWeight = if (selectedCategory == category) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (selectedCategory == category) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
-                                },
+                                text = { Text(category.name) },
                                 onClick = {
                                     selectedCategory = category
                                     expanded = false
-                                },
-                                modifier = Modifier.background(
-                                    if (selectedCategory == category) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
-                                )
+                                }
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (showError) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = errorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(8.dp),
-                            fontSize = 15.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = {
-                        if (!isLoading) {
-                            scope.launch {
-                                isLoading = true
-                                try {
-                                    val product = Product(
-                                        id = 0,
-                                        name = name,
-                                        description = description,
-                                        price = price.toDoubleOrNull() ?: 0.0,
-                                        stock = stock.toIntOrNull() ?: 0,
-                                        url_image = imageUrl
-                                    )
+                        scope.launch {
+                            isLoading = true
+                            try {
+                                val product = Product(
+                                    id = if (isEditing) productId else 0,
+                                    name = name,
+                                    description = description,
+                                    price = price.toDoubleOrNull() ?: 0.0,
+                                    stock = stock.toIntOrNull() ?: 0,
+                                    url_image = imageUrl
+                                )
+                                
+                                if (isEditing) {
+                                    productViewModel.updateProduct(productId, product)
+                                } else {
                                     val createdProduct = productViewModel.createProductSuspend(product)
                                     selectedCategory?.let { category ->
                                         categoryProductViewModel.create(
@@ -244,16 +228,17 @@ fun ProductFormScreen(
                                             )
                                         )
                                     }
-                                    navController.navigate("products") {
-                                        launchSingleTop = true
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("ProductFormScreen", "Error al crear producto", e)
-                                    errorMessage = e.message ?: "Error al crear el producto"
-                                    showError = true
-                                } finally {
-                                    isLoading = false
                                 }
+                                
+                                navController.navigate("products") {
+                                    launchSingleTop = true
+                                }
+                            } catch (e: Exception) {
+                                Log.e("ProductFormScreen", "Error al ${if (isEditing) "editar" else "crear"} producto", e)
+                                errorMessage = e.message ?: "Error al ${if (isEditing) "editar" else "crear"} el producto"
+                                showError = true
+                            } finally {
+                                isLoading = false
                             }
                         }
                     },
@@ -270,10 +255,23 @@ fun ProductFormScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Guardar", color = Color.White)
+                        Text(if (isEditing) "Guardar Cambios" else "Guardar", color = Color.White)
                     }
                 }
             }
         }
+    }
+
+    if (showError) {
+        AlertDialog(
+            onDismissRequest = { showError = false },
+            title = { Text("Error") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(onClick = { showError = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 } 

@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navArgument
 import com.example.tiendasuplementacion.screen.LoginScreen
 import com.example.tiendasuplementacion.screen.ProductScreen
 import com.example.tiendasuplementacion.screen.CartScreen
@@ -142,6 +144,13 @@ fun AppNavGraph(
                 composable("cart") { CartScreen(navController, cartViewModel) }
                 composable("payments") { PaymentScreen(navController) }
                 composable("productForm") { ProductFormScreen(navController) }
+                composable(
+                    route = "editProduct/{productId}",
+                    arguments = listOf(navArgument("productId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val productId = backStackEntry.arguments?.getLong("productId") ?: 0L
+                    ProductFormScreen(navController, productId = productId)
+                }
             }
         }
     } else {

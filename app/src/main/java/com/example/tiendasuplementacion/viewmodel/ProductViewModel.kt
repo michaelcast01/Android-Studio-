@@ -56,4 +56,38 @@ class ProductViewModel : ViewModel() {
         validateProduct(product)
         return repository.create(product)
     }
+
+    fun deleteProduct(id: Long) {
+        viewModelScope.launch {
+            try {
+                repository.delete(id)
+                fetchProducts()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error al eliminar el producto: ${e.message}"
+            }
+        }
+    }
+
+    suspend fun getProductById(id: Long): Product {
+        return try {
+            repository.getById(id)
+        } catch (e: Exception) {
+            _error.value = "Error al obtener el producto: ${e.message}"
+            throw e
+        }
+    }
+
+    fun updateProduct(id: Long, product: Product) {
+        viewModelScope.launch {
+            try {
+                validateProduct(product)
+                repository.update(id, product)
+                fetchProducts()
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error al actualizar el producto: ${e.message}"
+            }
+        }
+    }
 }

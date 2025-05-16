@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -124,7 +126,8 @@ fun ProductScreen(
                         },
                         categoryProducts = categoryProducts,
                         categories = categories,
-                        isAdmin = isAdmin
+                        isAdmin = isAdmin,
+                        navController = navController
                     )
                 }
             }
@@ -174,12 +177,40 @@ fun ProductCard(
     onAddToCart: (Product) -> Unit,
     categoryProducts: List<CategoryProduct>,
     categories: List<Category>,
-    isAdmin: Boolean = false
+    isAdmin: Boolean = false,
+    navController: NavController
 ) {
     val isOutOfStock = product.stock <= 0
     val categoryProduct = categoryProducts.find { it.product_id == product.id }
     val category = categoryProduct?.let { cp ->
         categories.find { it.id == cp.category_id }
+    }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    val productViewModel: ProductViewModel = viewModel()
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Confirmar eliminación") },
+            text = { Text("¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        productViewModel.deleteProduct(product.id)
+                        showDeleteConfirmation = false
+                    }
+                ) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmation = false }
+                ) {
+                    Text("No")
+                }
+            }
+        )
     }
 
     Card(
@@ -234,6 +265,48 @@ fun ProductCard(
                     Icon(Icons.Default.ShoppingCart, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Agregar al carrito")
+                }
+            }
+            if (isAdmin) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(
+                        onClick = { 
+                            navController.navigate("editProduct/${product.id}") {
+                                launchSingleTop = true
+                            }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { showDeleteConfirmation = true },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }

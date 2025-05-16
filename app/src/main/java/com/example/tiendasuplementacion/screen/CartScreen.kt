@@ -30,6 +30,8 @@ fun CartScreen(
     val error by cartViewModel.error.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var productToDelete by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(error) {
         val errorValue = error
@@ -37,6 +39,38 @@ fun CartScreen(
             showNetworkError = true
             networkErrorMessage = errorValue
         }
+    }
+
+    if (showDeleteConfirmation && productToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showDeleteConfirmation = false
+                productToDelete = null
+            },
+            title = { Text("Confirmar eliminación") },
+            text = { Text("¿Estás seguro de que quieres eliminar este producto del carrito?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        productToDelete?.let { cartViewModel.removeFromCart(it) }
+                        showDeleteConfirmation = false
+                        productToDelete = null
+                    }
+                ) {
+                    Text("Sí")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        productToDelete = null
+                    }
+                ) {
+                    Text("No")
+                }
+            }
+        )
     }
 
     Box(
@@ -119,7 +153,10 @@ fun CartScreen(
                                     }
                                 }
                                 IconButton(
-                                    onClick = { cartViewModel.removeFromCart(item.product.id) },
+                                    onClick = { 
+                                        productToDelete = item.product.id
+                                        showDeleteConfirmation = true
+                                    },
                                     colors = IconButtonDefaults.iconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
                                     )
