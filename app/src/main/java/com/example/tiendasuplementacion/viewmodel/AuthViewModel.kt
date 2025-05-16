@@ -6,7 +6,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.repository.UserRepository
-import com.example.tiendasuplementacion.session.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -33,7 +32,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val user = repository.login(email, password)
                 _currentUser.value = user
                 _isAuthenticated.value = true
-                SessionManager.saveEmail(getApplication(), email)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -56,7 +54,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 repository.create(user)
                 _currentUser.value = user
                 _isAuthenticated.value = true
-                SessionManager.saveEmail(getApplication(), user.email)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -67,12 +64,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun restoreSession() {
         viewModelScope.launch {
-            val email = SessionManager.getEmail(getApplication()).first()
-            if (!email.isNullOrBlank()) {
-                _isAuthenticated.value = true
-            } else {
-                _isAuthenticated.value = false
-            }
+            _isAuthenticated.value = false
         }
     }
 
@@ -81,7 +73,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _isAuthenticated.value = false
             _currentUser.value = null
             _error.value = null
-            SessionManager.clearSession(getApplication())
         }
     }
 }

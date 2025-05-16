@@ -26,11 +26,12 @@ class ProductViewModel : ViewModel() {
         }
     }
 
-    fun createProduct(product: Product) {
+    fun createProduct(product: Product): Product {
+        var createdProduct: Product? = null
         viewModelScope.launch {
             try {
                 validateProduct(product)
-                repository.create(product)
+                createdProduct = repository.create(product)
                 fetchProducts()
                 _error.value = null
             } catch (e: Exception) {
@@ -38,6 +39,7 @@ class ProductViewModel : ViewModel() {
                 throw e
             }
         }
+        return createdProduct ?: throw IllegalStateException("Error al crear el producto")
     }
 
     private fun validateProduct(product: Product) {
@@ -48,5 +50,10 @@ class ProductViewModel : ViewModel() {
             product.stock < 0 -> throw IllegalArgumentException("El stock no puede ser negativo")
             product.url_image.isBlank() -> throw IllegalArgumentException("La URL de la imagen no puede estar vacía")
         }
+    }
+
+    suspend fun createProductSuspend(product: Product): Product {
+        validateProduct(product)
+        return repository.create(product)
     }
 }

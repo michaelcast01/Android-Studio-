@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,22 +26,46 @@ import coil.compose.AsyncImage
 import com.example.tiendasuplementacion.viewmodel.ProductViewModel
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.model.Product
+import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
+import com.example.tiendasuplementacion.model.CategoryProduct
+import com.example.tiendasuplementacion.model.Category
+import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
+import com.example.tiendasuplementacion.component.NetworkErrorBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductScreen(
     navController: NavController,
     productViewModel: ProductViewModel = viewModel(),
-    cartViewModel: CartViewModel
+    cartViewModel: CartViewModel,
+    authViewModel: AuthViewModel = viewModel(),
+    categoryProductViewModel: CategoryProductViewModel = viewModel(),
+    categoryViewModel: CategoryViewModel = viewModel()
 ) {
     val products by productViewModel.products.observeAsState(emptyList())
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartItemCount = cartItems.sumOf { it.quantity }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val categoryProducts by categoryProductViewModel.relations.observeAsState(emptyList())
+    val categories by categoryViewModel.categories.observeAsState(emptyList())
+    val error by productViewModel.error.collectAsState()
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         productViewModel.fetchProducts()
+        categoryProductViewModel.fetchAll()
+        categoryViewModel.fetchCategories()
+    }
+
+    LaunchedEffect(error) {
+        if (error != null && (error!!.contains("No se pudo conectar") || error!!.contains("599"))) {
+            showNetworkError = true
+            networkErrorMessage = error ?: ""
+        }
     }
 
     if (showError) {
@@ -81,7 +106,7 @@ fun ProductScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             LazyVerticalGrid(
-                columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(2),
+                columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(8.dp),
                 modifier = Modifier.weight(1f)
             ) {
@@ -95,7 +120,9 @@ fun ProductScreen(
                                 errorMessage = e.message ?: "Error al agregar al carrito"
                                 showError = true
                             }
-                        }
+                        },
+                        categoryProducts = categoryProducts,
+                        categories = categories
                     )
                 }
             }
@@ -115,12 +142,43 @@ fun ProductScreen(
                 }
             }
         }
+        if (currentUser?.role_id == 2L) {
+            FloatingActionButton(
+                onClick = { navController.navigate("productForm") },
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(24.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar producto")
+            }
+        }
+        if (showNetworkError) {
+            NetworkErrorBanner(
+                message = networkErrorMessage,
+                onRetry = {
+                    showNetworkError = false
+                    productViewModel.fetchProducts()
+                },
+                onDismiss = { showNetworkError = false }
+            )
+        }
     }
 }
 
 @Composable
-fun ProductCard(product: Product, onAddToCart: (Product) -> Unit) {
+fun ProductCard(
+    product: Product,
+    onAddToCart: (Product) -> Unit,
+    categoryProducts: List<CategoryProduct>,
+    categories: List<Category>
+) {
     val isOutOfStock = product.stock <= 0
+    val categoryProduct = categoryProducts.find { it.product_id == product.id }
+    val category = categoryProduct?.let { cp ->
+        categories.find { it.id == cp.category_id }
+    }
+
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -149,6 +207,13 @@ fun ProductCard(product: Product, onAddToCart: (Product) -> Unit) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
+            category?.let {
+                Text(
+                    text = it.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
             Text(
                 text = "Precio: $${product.price}",
                 style = MaterialTheme.typography.bodyMedium

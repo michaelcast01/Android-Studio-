@@ -12,14 +12,19 @@ class SettingViewModel : ViewModel() {
 
     fun fetchSettings() {
         viewModelScope.launch {
-            _settings.value = repository.getAll()
+            try {
+                _settings.value = repository.getAll()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
-    fun createSetting(setting: Setting) {
-        viewModelScope.launch {
+    suspend fun createSetting(setting: Setting): Setting {
+        return try {
             repository.create(setting)
-            fetchSettings()
+        } catch (e: Exception) {
+            throw Exception("Error al crear la configuración: ${e.message}")
         }
     }
 }

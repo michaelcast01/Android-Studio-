@@ -26,6 +26,7 @@ import com.example.tiendasuplementacion.screen.LoginScreen
 import com.example.tiendasuplementacion.screen.ProductScreen
 import com.example.tiendasuplementacion.screen.CartScreen
 import com.example.tiendasuplementacion.screen.PaymentScreen
+import com.example.tiendasuplementacion.screen.ProductFormScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 
@@ -103,9 +104,10 @@ fun AppNavGraph(
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding(innerPadding)) {
-                composable("products") { ProductScreen(navController, cartViewModel = cartViewModel) }
+                composable("products") { ProductScreen(navController, cartViewModel = cartViewModel, authViewModel = authViewModel) }
                 composable("cart") { CartScreen(navController, cartViewModel) }
                 composable("payments") { PaymentScreen(navController) }
+                composable("productForm") { ProductFormScreen(navController) }
             }
         }
     } else {

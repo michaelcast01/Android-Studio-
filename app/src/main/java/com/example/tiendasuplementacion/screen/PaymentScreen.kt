@@ -1,6 +1,7 @@
 package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import com.example.tiendasuplementacion.component.NetworkErrorBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +32,10 @@ fun PaymentScreen(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     var showErrorDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
@@ -39,6 +44,13 @@ fun PaymentScreen(
     LaunchedEffect(error) {
         if (error != null) {
             showErrorDialog = true
+        }
+    }
+
+    LaunchedEffect(error) {
+        if (error != null && (error!!.contains("No se pudo conectar") || error!!.contains("599"))) {
+            showNetworkError = true
+            networkErrorMessage = error ?: ""
         }
     }
 
@@ -93,7 +105,11 @@ fun PaymentScreen(
                 ) {
                     payments.forEach { payment ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showSuccessDialog = true
+                                },
                             elevation = CardDefaults.cardElevation(4.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
@@ -141,6 +157,48 @@ fun PaymentScreen(
                 Icon(Icons.Default.Add, contentDescription = "Agregar método de pago")
             }
         }
+        if (showNetworkError) {
+            NetworkErrorBanner(
+                message = networkErrorMessage,
+                onRetry = {
+                    showNetworkError = false
+                    viewModel.fetchPayments()
+                },
+                onDismiss = { showNetworkError = false }
+            )
+        }
+    }
+
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { showSuccessDialog = false },
+            title = { Text("¡Compra Exitosa!") },
+            text = { Text("Tu compra ha sido procesada correctamente.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSuccessDialog = false
+                        navController.navigate("products") {
+                            launchSingleTop = true
+                        }
+                    }
+                ) {
+                    Text("Volver a Productos")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showSuccessDialog = false
+                        navController.navigate("cart") {
+                            launchSingleTop = true
+                        }
+                    }
+                ) {
+                    Text("Ver Carrito")
+                }
+            }
+        )
     }
 
     if (showErrorDialog) {

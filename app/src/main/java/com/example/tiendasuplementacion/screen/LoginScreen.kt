@@ -2,13 +2,14 @@ package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -17,15 +18,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.tiendasuplementacion.model.Role
+import com.example.tiendasuplementacion.model.Setting
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import com.example.tiendasuplementacion.viewmodel.RoleViewModel
+import com.example.tiendasuplementacion.viewmodel.SettingViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     navController: NavController,
-    viewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    roleViewModel: RoleViewModel = viewModel(),
+    settingViewModel: SettingViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -33,10 +40,31 @@ fun LoginScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    
+    // Campos adicionales para registro
+    var username by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf<Role?>(null) }
+    var name by remember { mutableStateOf("") }
+    var nickname by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var city by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    
+    val roles by roleViewModel.roles.observeAsState(emptyList())
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
-    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
+    val error by authViewModel.error.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    // Validación de email
+    fun isValidEmail(email: String): Boolean = email.contains("@") && email.length > 3
+    var emailTouched by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        roleViewModel.fetchRoles()
+    }
 
     LaunchedEffect(error) {
         if (error != null) {
@@ -61,7 +89,8 @@ fun LoginScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             elevation = CardDefaults.cardElevation(12.dp),
             shape = RoundedCornerShape(24.dp)
         ) {
@@ -74,29 +103,56 @@ fun LoginScreen(
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier.size(48.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (isRegistering) "Registro" else "Iniciar Sesión",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (isRegistering) {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Nombre de Usuario") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Person, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        emailTouched = true
+                    },
                     label = { Text("Email") },
                     leadingIcon = {
                         Icon(Icons.Default.Email, contentDescription = null)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    isError = emailTouched && !isValidEmail(email)
                 )
+                if (emailTouched && !isValidEmail(email)) {
+                    Text(
+                        text = "El correo debe contener @",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 13.sp,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = password,
@@ -108,10 +164,57 @@ fun LoginScreen(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (isRegistering) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Teléfono") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Phone, contentDescription = null)
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        
+                        OutlinedTextField(
+                            value = city,
+                            onValueChange = { city = it },
+                            label = { Text("Ciudad") },
+                            leadingIcon = {
+                                Icon(Icons.Default.LocationCity, contentDescription = null)
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = address,
+                        onValueChange = { address = it },
+                        label = { Text("Dirección") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Home, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 if (showError) {
                     Surface(
@@ -137,18 +240,27 @@ fun LoginScreen(
                             errorMessage = ""
 
                             if (isRegistering) {
-                                viewModel.register(
-                                    User(
-                                        id = 0,
-                                        username = email,
-                                        email = email,
-                                        password = password,
-                                        role_id = 2,
-                                        setting_id = null
-                                    )
+                                val setting = Setting(
+                                    id = 0,
+                                    payment_id = 1, // ID por defecto para el método de pago
+                                    name = username, // Usamos el nombre de usuario como nombre
+                                    nickname = "", // Omitido
+                                    phone = phone.toLongOrNull() ?: 0L,
+                                    city = city,
+                                    address = address
                                 )
+                                val createdSetting = settingViewModel.createSetting(setting)
+                                val user = User(
+                                    id = 0,
+                                    username = username,
+                                    email = email,
+                                    password = password,
+                                    role_id = 1L, // Cliente por defecto
+                                    setting_id = createdSetting.id
+                                )
+                                authViewModel.register(user)
                             } else {
-                                viewModel.login(email, password)
+                                authViewModel.login(email, password)
                             }
                             isLoading = false
                         }
@@ -156,7 +268,13 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = if (isRegistering) {
+                        email.isNotBlank() && password.isNotBlank() && username.isNotBlank() &&
+                        phone.isNotBlank() && city.isNotBlank() && address.isNotBlank() && isValidEmail(email)
+                    } else {
+                        email.isNotBlank() && password.isNotBlank() && isValidEmail(email)
+                    }
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
@@ -171,17 +289,16 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(
-                    onClick = {
-                        isRegistering = !isRegistering
-                        showError = false
-                        errorMessage = ""
-                    },
-                    enabled = !isLoading
+                    onClick = { isRegistering = !isRegistering }
                 ) {
                     Text(
-                        if (isRegistering) "¿Ya tienes cuenta? Inicia sesión" else "¿No tienes cuenta? Regístrate",
-                        color = MaterialTheme.colorScheme.primary
+                        if (isRegistering) "¿Ya tienes una cuenta? Inicia sesión" 
+                        else "¿No tienes una cuenta? Regístrate"
                     )
+                }
+
+                if (currentUser?.role_id == 2L) {
+                    // Mostrar botón de agregar producto
                 }
             }
         }

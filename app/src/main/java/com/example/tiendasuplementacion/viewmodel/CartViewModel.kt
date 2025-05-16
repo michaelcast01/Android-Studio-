@@ -1,5 +1,6 @@
 package com.example.tiendasuplementacion.viewmodel
 
+
 import androidx.lifecycle.ViewModel
 import com.example.tiendasuplementacion.model.CartItem
 import com.example.tiendasuplementacion.model.Product
@@ -7,9 +8,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
+
 class CartViewModel : ViewModel() {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     val cartItems: StateFlow<List<CartItem>> = _cartItems
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
 
     fun addToCart(product: Product) {
         try {
@@ -85,5 +90,13 @@ class CartViewModel : ViewModel() {
         } catch (e: Exception) {
             0.0
         }
+    }
+
+    fun setError(message: String?) {
+        _error.value = message
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }

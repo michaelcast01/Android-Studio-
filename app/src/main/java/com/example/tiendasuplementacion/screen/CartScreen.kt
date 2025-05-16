@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
+import com.example.tiendasuplementacion.component.NetworkErrorBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +26,17 @@ fun CartScreen(
     cartViewModel: CartViewModel
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
+    val error by cartViewModel.error.collectAsState()
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(error) {
+        val errorValue = error
+        if (errorValue != null && (errorValue.contains("No se pudo conectar") || errorValue.contains("599"))) {
+            showNetworkError = true
+            networkErrorMessage = errorValue
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -91,10 +103,21 @@ fun CartScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Total: $${cartViewModel.getTotalPrice()}",
+                    "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.End)
+                )
+            }
+            if (showNetworkError) {
+                NetworkErrorBanner(
+                    message = networkErrorMessage,
+                    onRetry = {
+                        showNetworkError = false
+                        // Si tienes un método para recargar el carrito, llámalo aquí
+                        // cartViewModel.fetchCart()
+                    },
+                    onDismiss = { showNetworkError = false }
                 )
             }
         }
@@ -115,7 +138,7 @@ fun CartScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { navController.navigate("payments") },
+                        onClick = { navController.navigate("payments") { launchSingleTop = true } },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -130,7 +153,7 @@ fun CartScreen(
                     }
                     
                     OutlinedButton(
-                        onClick = { navController.navigate("products") },
+                        onClick = { navController.navigate("products") { launchSingleTop = true } },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
