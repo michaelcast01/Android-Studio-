@@ -34,6 +34,8 @@ import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import com.example.tiendasuplementacion.model.CategoryProduct
 import com.example.tiendasuplementacion.model.Category
 import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
+import androidx.compose.ui.res.painterResource
+import com.example.tiendasuplementacion.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -226,6 +228,8 @@ fun ProductCard(
             AsyncImage(
                 model = product.url_image,
                 contentDescription = product.name,
+                placeholder = painterResource(R.drawable.placeholder),
+                error = painterResource(R.drawable.image_error),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
