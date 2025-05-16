@@ -15,6 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -53,6 +56,8 @@ fun AppNavGraph(
         )
     }
 
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     if (isAuthenticated == true) {
         Scaffold(
             topBar = {
@@ -80,7 +85,9 @@ fun AppNavGraph(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { authViewModel.logout() }) {
+                        IconButton(onClick = {
+                            showLogoutDialog = true
+                        }) {
                             Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
                         }
                     }
@@ -110,6 +117,26 @@ fun AppNavGraph(
             },
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
+            if (showLogoutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutDialog = false },
+                    title = { Text("Confirmar cierre de sesión") },
+                    text = { Text("¿Realmente quieres cerrar la sesión?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showLogoutDialog = false
+                            authViewModel.logout()
+                        }) {
+                            Text("Sí")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showLogoutDialog = false }) {
+                            Text("No")
+                        }
+                    }
+                )
+            }
             NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding(innerPadding)) {
                 composable("products") { ProductScreen(navController, cartViewModel = cartViewModel, authViewModel = authViewModel) }
                 composable("cart") { CartScreen(navController, cartViewModel) }
