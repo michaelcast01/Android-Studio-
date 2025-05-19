@@ -228,8 +228,7 @@ fun CartScreen(
                     )
                     Button(
                         onClick = {
-                            navController.navigate("payments") { launchSingleTop = true }
-                            cartViewModel.clearCart()
+                            navController.navigate("paymentSelection") { launchSingleTop = true }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),

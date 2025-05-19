@@ -10,13 +10,13 @@ import com.example.tiendasuplementacion.navigation.AppNavGraph
 import com.example.tiendasuplementacion.ui.theme.TiendaSuplementacionTheme
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
 
         val cartViewModel: CartViewModel by viewModels()
         val authViewModel: AuthViewModel by viewModels()
+        val paymentViewModel: PaymentViewModel by viewModels()
 
         authViewModel.restoreSession()
 
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         cartViewModel = cartViewModel,
                         authViewModel = authViewModel,
+                        paymentViewModel = paymentViewModel,
                         startDestination = if (isAuthenticated == true) "products" else "login"
                     )
                 }

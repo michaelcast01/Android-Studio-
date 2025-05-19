@@ -55,4 +55,8 @@ class PaymentViewModel : ViewModel() {
     fun clearError() {
         _error.value = null
     }
+
+    fun getPaymentById(paymentId: Long): Payment? {
+        return payments.value?.find { it.id == paymentId }
+    }
 }

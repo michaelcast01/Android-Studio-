@@ -1,5 +1,7 @@
 package com.example.tiendasuplementacion.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,16 +38,23 @@ import com.example.tiendasuplementacion.screen.PaymentScreen
 import com.example.tiendasuplementacion.screen.ProductFormScreen
 import com.example.tiendasuplementacion.screen.SettingsScreen
 import com.example.tiendasuplementacion.screen.OrderScreen
+import com.example.tiendasuplementacion.screen.PaymentSelectionScreen
+import com.example.tiendasuplementacion.screen.OrderConfirmationScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tiendasuplementacion.model.Order
+import com.example.tiendasuplementacion.model.Payment
+import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     cartViewModel: CartViewModel,
     authViewModel: AuthViewModel,
+    paymentViewModel: PaymentViewModel,
     startDestination: String
 ) {
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
@@ -157,6 +166,32 @@ fun AppNavGraph(
                         userDetailViewModel = viewModel(),
                         authViewModel = authViewModel
                     ) 
+                }
+                composable("paymentSelection") {
+                    PaymentSelectionScreen(
+                        navController = navController,
+                        paymentViewModel = paymentViewModel,
+                        onPaymentSelected = { payment ->
+                            navController.navigate("orderConfirmation/${payment.id}") {
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
+                composable(
+                    route = "orderConfirmation/{paymentId}",
+                    arguments = listOf(navArgument("paymentId") { type = NavType.LongType })
+                ) { backStackEntry ->
+                    val paymentId = backStackEntry.arguments?.getLong("paymentId") ?: 0L
+                    val payment = paymentViewModel.getPaymentById(paymentId)
+                    if (payment != null) {
+                        OrderConfirmationScreen(
+                            navController = navController,
+                            cartViewModel = cartViewModel,
+                            selectedPayment = payment,
+                            authViewModel = authViewModel
+                        )
+                    }
                 }
                 composable("productForm") { ProductFormScreen(navController) }
                 composable("settings") { SettingsScreen(navController, authViewModel = authViewModel) }
