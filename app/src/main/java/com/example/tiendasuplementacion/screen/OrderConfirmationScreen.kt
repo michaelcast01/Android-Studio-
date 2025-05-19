@@ -19,7 +19,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tiendasuplementacion.model.Order
+import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +29,16 @@ fun OrderConfirmationScreen(
     navController: NavController,
     cartViewModel: CartViewModel,
     selectedPayment: Payment,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    orderViewModel: OrderViewModel = viewModel()
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
     val total = cartViewModel.getTotalPrice()
     val totalProducts = cartItems.sumOf { it.quantity }
     val currentUser by authViewModel.currentUser.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -147,29 +153,47 @@ fun OrderConfirmationScreen(
 
         Button(
             onClick = {
-                // Crear la orden con el método de pago seleccionado
-                val order = Order(
-                    order_id = 0, // El backend asignará el ID
-                    total = total,
-                    date_order = LocalDateTime.now().toString(),
-                    user_id = currentUser?.id ?: 0L,
-                    status_id = 1L, // Estado inicial: pendiente
-                    total_products = totalProducts,
-                    payment_id = selectedPayment.id
-                )
-                
-                // Aquí iría la lógica para crear la orden en el backend
-                // Por ahora solo limpiamos el carrito y volvemos a productos
-                cartViewModel.clearCart()
-                navController.navigate("products") {
-                    launchSingleTop = true
-                    popUpTo("cart") { inclusive = true }
+                isLoading = true
+                try {
+                    // Crear la orden con el método de pago seleccionado
+                    val order = Order(
+                        order_id = 0, // El backend asignará el ID
+                        total = total,
+                        date_order = "", // El backend maneja la fecha
+                        user_id = currentUser?.id ?: 0L,
+                        status_id = 1L, // Estado inicial: pendiente
+                        total_products = totalProducts,
+                        payment_id = selectedPayment.id
+                    )
+                    
+                    // Crear la orden en el backend
+                    orderViewModel.createOrder(order)
+                    
+                    // Limpiar el carrito y volver a productos
+                    cartViewModel.clearCart()
+                    navController.navigate("products") {
+                        launchSingleTop = true
+                        popUpTo("cart") { inclusive = true }
+                    }
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: "Error al crear la orden"
+                    showError = true
+                } finally {
+                    isLoading = false
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            enabled = !isLoading
         ) {
-            Text("Confirmar Compra")
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Confirmar Compra")
+            }
         }
 
         OutlinedButton(
@@ -181,5 +205,20 @@ fun OrderConfirmationScreen(
         ) {
             Text("Cancelar")
         }
+    }
+
+    if (showError) {
+        AlertDialog(
+            onDismissRequest = { showError = false },
+            title = { Text("Error") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = { showError = false }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 } 
