@@ -188,6 +188,7 @@ fun ProductCard(
         categories.find { it.id == cp.category_id }
     }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showProductDetails by remember { mutableStateOf(false) }
     val productViewModel: ProductViewModel = viewModel()
 
     if (showDeleteConfirmation) {
@@ -210,6 +211,62 @@ fun ProductCard(
                     onClick = { showDeleteConfirmation = false }
                 ) {
                     Text("No")
+                }
+            }
+        )
+    }
+
+    if (showProductDetails) {
+        AlertDialog(
+            onDismissRequest = { showProductDetails = false },
+            title = { Text("Detalles del Producto") },
+            text = {
+                Column(
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    AsyncImage(
+                        model = product.url_image,
+                        contentDescription = product.name,
+                        placeholder = painterResource(R.drawable.placeholder),
+                        error = painterResource(R.drawable.image_error),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "ID: ${product.id}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Nombre: ${product.name}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Descripción: ${product.description}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Precio: $${product.price}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Stock: ${product.stock}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isOutOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Categoría: ${category?.name ?: "Sin categoría"}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showProductDetails = false }) {
+                    Text("Cerrar")
                 }
             }
         )
@@ -248,68 +305,47 @@ fun ProductCard(
             )
             Text(
                 text = "$${product.price}",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = if (isOutOfStock) "Agotado" else "Stock: ${product.stock}",
-                style = MaterialTheme.typography.bodyMedium,
+                text = if (isOutOfStock) "Sin stock" else "Stock: ${product.stock}",
+                style = MaterialTheme.typography.bodySmall,
                 color = if (isOutOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (!isAdmin && !isOutOfStock) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Button(
-                    onClick = { onAddToCart(product) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    onClick = { showProductDetails = true },
+                    modifier = Modifier.weight(1f).padding(end = 4.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Agregar al carrito")
+                    Text("+")
                 }
-            }
-            if (isAdmin) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
+                if (isAdmin) {
                     IconButton(
-                        onClick = { 
-                            navController.navigate("editProduct/${product.id}") {
-                                launchSingleTop = true
-                            }
-                        },
-                        modifier = Modifier.size(40.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        )
+                        onClick = { navController.navigate("editProduct/${product.id}") },
+                        modifier = Modifier.weight(0.5f)
                     ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Editar",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
                     IconButton(
                         onClick = { showDeleteConfirmation = true },
-                        modifier = Modifier.size(40.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
-                        )
+                        modifier = Modifier.weight(0.5f)
                     ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = "Eliminar",
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    }
+                } else {
+                    Button(
+                        onClick = { onAddToCart(product) },
+                        enabled = !isOutOfStock,
+                        modifier = Modifier.weight(1f).padding(start = 4.dp)
+                    ) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Agregar al carrito")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Agregar")
                     }
                 }
             }
