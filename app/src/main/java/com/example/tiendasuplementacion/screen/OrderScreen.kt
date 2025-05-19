@@ -93,6 +93,9 @@ fun OrderScreen(
                                     Text("Estado: ${order.status.name}")
                                     Text("Total: $${order.total}")
                                     Text("Productos: ${order.total_products}")
+                                    if (order.payment_id != null) {
+                                        Text("Método de pago: ${order.payment_id}")
+                                    }
                                     
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(

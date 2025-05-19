@@ -38,6 +38,7 @@ data class UserOrder(
     val status_id: Long,
     val total_products: Int,
     val total: Double,
+    val payment_id: Long?,
     val products: List<OrderProduct>
 )
 
