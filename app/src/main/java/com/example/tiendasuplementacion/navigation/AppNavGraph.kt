@@ -38,6 +38,7 @@ import com.example.tiendasuplementacion.screen.SettingsScreen
 import com.example.tiendasuplementacion.screen.OrderScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,7 +151,13 @@ fun AppNavGraph(
                 composable("products") { ProductScreen(navController, cartViewModel = cartViewModel, authViewModel = authViewModel) }
                 composable("cart") { CartScreen(navController, cartViewModel) }
                 composable("payments") { PaymentScreen(navController) }
-                composable("orders") { OrderScreen(navController) }
+                composable("orders") { 
+                    OrderScreen(
+                        navController = navController,
+                        userDetailViewModel = viewModel(),
+                        authViewModel = authViewModel
+                    ) 
+                }
                 composable("productForm") { ProductFormScreen(navController) }
                 composable("settings") { SettingsScreen(navController, authViewModel = authViewModel) }
                 composable(

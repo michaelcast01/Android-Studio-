@@ -2,6 +2,7 @@ package com.example.tiendasuplementacion.interfaces
 
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.model.LoginResponse
+import com.example.tiendasuplementacion.model.UserDetail
 import retrofit2.http.*
 
 interface UserApiService {
@@ -23,4 +24,7 @@ interface UserApiService {
 
     @POST("/api/auth/login")
     suspend fun login(@Body credentials: Map<String, String>): LoginResponse
+
+    @GET("/api/user-details/{id}")
+    suspend fun getUserDetails(@Path("id") id: Long): UserDetail
 }
