@@ -11,6 +11,7 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.SettingViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
+import com.example.tiendasuplementacion.model.Payment
 
 @Composable
 fun SettingsScreen(
@@ -20,10 +21,15 @@ fun SettingsScreen(
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
     val settingDetail by settingViewModel.settingDetail.observeAsState()
+    val availablePayments by settingViewModel.availablePayments.observeAsState()
     val error by settingViewModel.error.observeAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var showPaymentMethods by remember { mutableStateOf(false) }
+    var showAddPaymentDialog by remember { mutableStateOf(false) }
+    var isAddingPayment by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
+    var addedPaymentName by remember { mutableStateOf("") }
 
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
@@ -31,10 +37,15 @@ fun SettingsScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        settingViewModel.fetchAvailablePaymentMethods()
+    }
+
     LaunchedEffect(error) {
         error?.let {
             showNetworkError = true
             networkErrorMessage = it
+            isAddingPayment = false
         }
     }
 
@@ -51,13 +62,27 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.padding(16.dp))
             
-            Button(
-                onClick = { showPaymentMethods = !showPaymentMethods },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Ver Métodos de Pago")
+                Button(
+                    onClick = { showPaymentMethods = !showPaymentMethods },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
+                    Text("Ver Métodos de Pago")
+                }
+                
+                Button(
+                    onClick = { showAddPaymentDialog = true },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp)
+                ) {
+                    Text("Agregar Método")
+                }
             }
             
             if (showPaymentMethods) {
@@ -109,6 +134,70 @@ fun SettingsScreen(
             } ?: run {
                 Text("No se encontraron configuraciones")
             }
+        }
+
+        if (showAddPaymentDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddPaymentDialog = false },
+                title = { Text("Agregar Método de Pago") },
+                text = {
+                    Column {
+                        Text("Selecciona un método de pago para agregar:")
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        
+                        // Filtrar los métodos de pago que no están en la configuración actual
+                        val currentPaymentIds = settingDetail?.payments?.map { it.id } ?: emptyList()
+                        val availableToAdd = availablePayments?.filter { it.id !in currentPaymentIds } ?: emptyList()
+                        
+                        if (availableToAdd.isEmpty()) {
+                            Text("No hay métodos de pago disponibles para agregar")
+                        } else {
+                            availableToAdd.forEach { payment ->
+                                Button(
+                                    onClick = {
+                                        isAddingPayment = true
+                                        addedPaymentName = payment.name
+                                        settingViewModel.addPaymentMethod(payment.id)
+                                        showSuccessMessage = true
+                                        showAddPaymentDialog = false
+                                    },
+                                    enabled = !isAddingPayment,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    if (isAddingPayment) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    } else {
+                                        Text(payment.name)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAddPaymentDialog = false }) {
+                        Text("Cerrar")
+                    }
+                }
+            )
+        }
+
+        if (showSuccessMessage) {
+            AlertDialog(
+                onDismissRequest = { showSuccessMessage = false },
+                title = { Text("Éxito") },
+                text = { Text("Se ha agregado el método de pago '$addedPaymentName' correctamente.") },
+                confirmButton = {
+                    TextButton(onClick = { showSuccessMessage = false }) {
+                        Text("Aceptar")
+                    }
+                }
+            )
         }
 
         if (showNetworkError) {

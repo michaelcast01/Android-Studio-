@@ -22,4 +22,7 @@ interface SettingApiService {
 
     @DELETE("/api/settings/{id}")
     suspend fun delete(@Path("id") id: Long)
+
+    @POST("/api/settings-payments")
+    suspend fun addPaymentMethod(@Body request: Map<String, Long>)
 }
