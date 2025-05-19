@@ -23,6 +23,7 @@ fun SettingsScreen(
     val error by settingViewModel.error.observeAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
+    var showPaymentMethods by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
@@ -50,6 +51,39 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.padding(16.dp))
             
+            Button(
+                onClick = { showPaymentMethods = !showPaymentMethods },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("Ver Métodos de Pago")
+            }
+            
+            if (showPaymentMethods) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Métodos de Pago Disponibles",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.padding(8.dp))
+                        settingDetail?.payments?.forEach { payment ->
+                            Text("• ${payment.name}")
+                        } ?: Text("No hay métodos de pago configurados")
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.padding(16.dp))
+            
             settingDetail?.let { detail ->
                 Card(
                     modifier = Modifier
@@ -70,18 +104,6 @@ fun SettingsScreen(
                         Text("Teléfono: ${detail.phone}")
                         Text("Ciudad: ${detail.city}")
                         Text("Dirección: ${detail.address}")
-                        
-                        Spacer(modifier = Modifier.padding(16.dp))
-                        
-                        Text(
-                            text = "Métodos de Pago",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.padding(8.dp))
-                        detail.payments.forEach { payment ->
-                            Text("• ${payment.name}")
-                        }
                     }
                 }
             } ?: run {
