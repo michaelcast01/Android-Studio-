@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,6 +35,7 @@ import com.example.tiendasuplementacion.screen.CartScreen
 import com.example.tiendasuplementacion.screen.PaymentScreen
 import com.example.tiendasuplementacion.screen.ProductFormScreen
 import com.example.tiendasuplementacion.screen.SettingsScreen
+import com.example.tiendasuplementacion.screen.OrderScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 
@@ -51,6 +53,7 @@ fun AppNavGraph(
         listOf(
             NavBarItem("products", "Productos", Icons.Default.Store),
             NavBarItem("payments", "Pagos", Icons.Default.Payment),
+            NavBarItem("orders", "Pedidos", Icons.Default.List),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     } else {
@@ -58,6 +61,7 @@ fun AppNavGraph(
             NavBarItem("products", "Productos", Icons.Default.Store),
             NavBarItem("cart", "Carrito", Icons.Default.ShoppingCart),
             NavBarItem("payments", "Pagos", Icons.Default.Payment),
+            NavBarItem("orders", "Pedidos", Icons.Default.List),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     }
@@ -146,6 +150,7 @@ fun AppNavGraph(
                 composable("products") { ProductScreen(navController, cartViewModel = cartViewModel, authViewModel = authViewModel) }
                 composable("cart") { CartScreen(navController, cartViewModel) }
                 composable("payments") { PaymentScreen(navController) }
+                composable("orders") { OrderScreen(navController) }
                 composable("productForm") { ProductFormScreen(navController) }
                 composable("settings") { SettingsScreen(navController, authViewModel = authViewModel) }
                 composable(
