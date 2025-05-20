@@ -74,7 +74,7 @@ fun PaymentScreen(
             Text(
                 "Métodos de Pago",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFFF6E7DF),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -95,7 +95,7 @@ fun PaymentScreen(
                 ) {
                     Text(
                         "No hay métodos de pago registrados",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                 }
             } else {
@@ -110,8 +110,11 @@ fun PaymentScreen(
                                 .clickable {
                                     showSuccessDialog = true
                                 },
-                            elevation = CardDefaults.cardElevation(4.dp),
-                            shape = RoundedCornerShape(16.dp)
+                            elevation = CardDefaults.cardElevation(10.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF26272B)
+                            )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -124,11 +127,12 @@ fun PaymentScreen(
                                     Text(
                                         text = payment.method ?: "",
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = Color(0xFFF6E7DF)
                                     )
                                     Text(
                                         text = "Nombre: ${payment.name ?: ""}",
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
                                     )
                                 }
                                 Icon(

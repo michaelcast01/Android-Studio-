@@ -1,6 +1,7 @@
 package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -12,6 +13,7 @@ import com.example.tiendasuplementacion.viewmodel.SettingViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.model.Payment
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun SettingsScreen(
@@ -57,7 +59,8 @@ fun SettingsScreen(
         ) {
             Text(
                 text = "Configuraciones",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color(0xFFF6E7DF)
             )
             
             Spacer(modifier = Modifier.padding(16.dp))
@@ -89,7 +92,12 @@ fun SettingsScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(8.dp),
+                    elevation = CardDefaults.cardElevation(10.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF26272B)
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -97,12 +105,12 @@ fun SettingsScreen(
                         Text(
                             text = "Métodos de Pago Disponibles",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            color = Color(0xFFF6E7DF)
                         )
                         Spacer(modifier = Modifier.padding(8.dp))
                         settingDetail?.payments?.forEach { payment ->
-                            Text("• ${payment.name}")
-                        } ?: Text("No hay métodos de pago configurados")
+                            Text("• ${payment.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                        } ?: Text("No hay métodos de pago configurados", color = Color(0xFFF6E7DF).copy(alpha = 0.7f))
                     }
                 }
             }
@@ -113,7 +121,12 @@ fun SettingsScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(8.dp),
+                    elevation = CardDefaults.cardElevation(10.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF26272B)
+                    )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -121,14 +134,14 @@ fun SettingsScreen(
                         Text(
                             text = "Información Personal",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            color = Color(0xFFF6E7DF)
                         )
                         Spacer(modifier = Modifier.padding(8.dp))
-                        Text("Nombre: ${detail.name}")
-                        Text("Apodo: ${detail.nickname}")
-                        Text("Teléfono: ${detail.phone}")
-                        Text("Ciudad: ${detail.city}")
-                        Text("Dirección: ${detail.address}")
+                        Text("Nombre: ${detail.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                        Text("Apodo: ${detail.nickname}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                        Text("Teléfono: ${detail.phone}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                        Text("Ciudad: ${detail.city}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                        Text("Dirección: ${detail.address}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                     }
                 }
             } ?: run {

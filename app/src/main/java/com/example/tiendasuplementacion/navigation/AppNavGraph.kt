@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tiendasuplementacion.model.Order
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
+import androidx.compose.ui.graphics.Color
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,20 +88,20 @@ fun AppNavGraph(
                             val initial = currentUser?.username?.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
                             Surface(
                                 shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = Color(0xFF18191C),
                                 modifier = Modifier.width(32.dp)
                             ) {
                                 Text(
                                     text = initial,
-                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    color = Color(0xFFF6E7DF),
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
-                                Text(text = currentUser?.username ?: "Usuario", style = MaterialTheme.typography.titleMedium)
-                                Text(text = currentUser?.email ?: "", style = MaterialTheme.typography.bodySmall)
+                                Text(text = currentUser?.username ?: "Usuario", style = MaterialTheme.typography.titleMedium, color = Color(0xFFF6E7DF))
+                                Text(text = currentUser?.email ?: "", style = MaterialTheme.typography.bodySmall, color = Color(0xFFF6E7DF).copy(alpha = 0.7f))
                             }
                         }
                     },
@@ -108,19 +109,24 @@ fun AppNavGraph(
                         IconButton(onClick = {
                             showLogoutDialog = true
                         }) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
+                            Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión", tint = Color(0xFFF6E7DF))
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF18191C)
+                    )
                 )
             },
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = Color(0xFF18191C)
+                ) {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
                     items.forEach { item ->
                         NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) },
+                            icon = { Icon(item.icon, contentDescription = item.label, tint = Color(0xFFF6E7DF)) },
+                            label = { Text(item.label, color = Color(0xFFF6E7DF)) },
                             selected = currentRoute == item.route,
                             onClick = {
                                 if (currentRoute != item.route) {

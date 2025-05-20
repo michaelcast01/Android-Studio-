@@ -13,6 +13,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -91,12 +92,15 @@ fun LoginScreen(
                 .fillMaxWidth(0.92f)
                 .padding(16.dp)
                 .verticalScroll(scrollState),
-            elevation = CardDefaults.cardElevation(12.dp),
-            shape = RoundedCornerShape(24.dp)
+            elevation = CardDefaults.cardElevation(10.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF26272B)
+            )
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp),
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
@@ -109,7 +113,7 @@ fun LoginScreen(
                 Text(
                     text = if (isRegistering) "Registro" else "Iniciar Sesión",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -117,13 +121,21 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Nombre de Usuario") },
+                        label = { Text("Nombre de Usuario", color = Color(0xFFF6E7DF)) },
                         leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null)
+                            Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFFF6E7DF))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF26272B),
+                            unfocusedContainerColor = Color(0xFF26272B),
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                        )
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -134,19 +146,27 @@ fun LoginScreen(
                         email = it
                         emailTouched = true
                     },
-                    label = { Text("Email") },
+                    label = { Text("Email", color = Color(0xFFF6E7DF)) },
                     leadingIcon = {
-                        Icon(Icons.Default.Email, contentDescription = null)
+                        Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFFF6E7DF))
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp),
-                    isError = emailTouched && !isValidEmail(email)
+                    isError = emailTouched && !isValidEmail(email),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF26272B),
+                        unfocusedContainerColor = Color(0xFF26272B),
+                        focusedTextColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                    )
                 )
                 if (emailTouched && !isValidEmail(email)) {
                     Text(
                         text = "El correo debe contener @",
-                        color = MaterialTheme.colorScheme.error,
+                        color = Color(0xFFF6E7DF),
                         fontSize = 13.sp,
                         modifier = Modifier.align(Alignment.Start)
                     )
@@ -157,14 +177,22 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Contraseña") },
+                    label = { Text("Contraseña", color = Color(0xFFF6E7DF)) },
                     leadingIcon = {
-                        Icon(Icons.Default.Lock, contentDescription = null)
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFF6E7DF))
                     },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF26272B),
+                        unfocusedContainerColor = Color(0xFF26272B),
+                        focusedTextColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                    )
                 )
 
                 if (isRegistering) {
@@ -224,7 +252,7 @@ fun LoginScreen(
                     ) {
                         Text(
                             text = errorMessage,
-                            color = MaterialTheme.colorScheme.error,
+                            color = Color(0xFFF6E7DF),
                             modifier = Modifier.padding(8.dp),
                             fontSize = 15.sp
                         )

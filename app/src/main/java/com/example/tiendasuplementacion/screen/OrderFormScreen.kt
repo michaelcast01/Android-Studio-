@@ -66,13 +66,13 @@ fun OrderFormScreen(
                 Text(
                     text = "Crear Orden",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Total: $${total}",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 if (showError) {

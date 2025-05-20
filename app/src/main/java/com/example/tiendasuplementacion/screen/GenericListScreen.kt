@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,7 +24,12 @@ fun <T> GenericListScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(title) })
+            TopAppBar(
+                title = { Text(title, color = Color(0xFFF6E7DF)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF18191C)
+                )
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onCreateClick) {

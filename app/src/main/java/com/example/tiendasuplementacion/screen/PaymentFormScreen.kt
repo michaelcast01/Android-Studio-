@@ -74,7 +74,7 @@ fun PaymentFormScreen(
                 Text(
                     text = "Agregar Método de Pago",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 

@@ -3,6 +3,7 @@ package com.example.tiendasuplementacion.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -15,6 +16,7 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.UserDetailViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +60,7 @@ fun OrderScreen(
                     Text(
                         text = "Mis Pedidos",
                         style = MaterialTheme.typography.headlineMedium,
+                        color = Color(0xFFF6E7DF),
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
@@ -68,6 +71,7 @@ fun OrderScreen(
                             Text(
                                 text = "No tienes pedidos aún",
                                 style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
                                 modifier = Modifier.padding(16.dp)
                             )
                         }
@@ -76,7 +80,12 @@ fun OrderScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
+                                    .padding(vertical = 8.dp),
+                                elevation = CardDefaults.cardElevation(10.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF26272B)
+                                )
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -86,25 +95,27 @@ fun OrderScreen(
                                     Text(
                                         text = "Pedido #${order.order_id}",
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFF6E7DF)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Fecha: ${order.date_order}")
-                                    Text("Estado: ${order.status.name}")
-                                    Text("Total: $${order.total}")
-                                    Text("Productos: ${order.total_products}")
+                                    Text("Fecha: ${order.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                    Text("Estado: ${order.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                    Text("Total: $${order.total}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                    Text("Productos: ${order.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                     if (order.payment_id != null) {
-                                        Text("Método de pago: ${order.payment_id}")
+                                        Text("Método de pago: ${order.payment_id}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                     }
                                     
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = "Productos:",
                                         style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFF6E7DF)
                                     )
                                     order.products.forEach { product ->
-                                        Text("• ${product.name} - $${product.price}")
+                                        Text("• ${product.name} - $${product.price}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                     }
                                 }
                             }

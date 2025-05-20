@@ -92,8 +92,8 @@ fun ProductScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f)
+                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A)
                     )
                 )
             )
@@ -107,7 +107,7 @@ fun ProductScreen(
             Text(
                 text = "Productos",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFFF6E7DF),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             LazyVerticalGrid(
@@ -137,27 +137,27 @@ fun ProductScreen(
         AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != 2L) {
             FloatingActionButton(
                 onClick = { navController.navigate("cart") },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFFF6E7DF),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
             ) {
                 BadgedBox(badge = {
-                    Badge { Text(cartItemCount.toString()) }
+                    Badge { Text(cartItemCount.toString(), color = Color(0xFF23242A)) }
                 }) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito", tint = Color.White)
+                    Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito", tint = Color(0xFF23242A))
                 }
             }
         }
         if (currentUser?.role_id == 2L) {
             FloatingActionButton(
                 onClick = { navController.navigate("productForm") },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFFF6E7DF),
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(24.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar producto")
+                Icon(Icons.Default.Add, contentDescription = "Agregar producto", tint = Color(0xFF23242A))
             }
         }
         if (showNetworkError) {
@@ -276,8 +276,11 @@ fun ProductCard(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp),
-        shape = RoundedCornerShape(16.dp)
+        elevation = CardDefaults.cardElevation(10.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF26272B)
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -296,22 +299,22 @@ fun ProductCard(
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = Color(0xFFF6E7DF)
             )
             Text(
                 text = category?.name ?: "Sin categoría",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
             )
             Text(
                 text = "$${product.price}",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = Color(0xFFF6E7DF)
             )
             Text(
                 text = if (isOutOfStock) "Sin stock" else "Stock: ${product.stock}",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isOutOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isOutOfStock) Color(0xFFD32F2F) else Color(0xFFF6E7DF).copy(alpha = 0.7f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -320,27 +323,38 @@ fun ProductCard(
             ) {
                 Button(
                     onClick = { showProductDetails = true },
-                    modifier = Modifier.weight(1f).padding(end = 4.dp)
+                    modifier = Modifier.weight(1f).padding(end = 4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF6E7DF)
+                    )
                 ) {
-                    Text("+")
+                    Text("+", color = Color(0xFF23242A))
                 }
                 if (isAdmin) {
                     IconButton(
                         onClick = { navController.navigate("editProduct/${product.id}") },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = Color(0xFFF6E7DF)
+                        )
                     }
                 } else {
                     Button(
                         onClick = { onAddToCart(product) },
                         enabled = !isOutOfStock,
-                        modifier = Modifier.weight(1f).padding(start = 4.dp)
+                        modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF6E7DF)
+                        )
                     ) {
                         Icon(
                             Icons.Default.ShoppingCart,
                             contentDescription = "Agregar al carrito",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = Color(0xFF23242A)
                         )
                     }
                 }

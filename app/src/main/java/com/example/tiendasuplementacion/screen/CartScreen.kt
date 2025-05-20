@@ -93,14 +93,14 @@ fun CartScreen(
             Text(
                 "Carrito de Compras",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFFF6E7DF),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             if (cartItems.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Tu carrito está vacío.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Tu carrito está vacío.", color = Color(0xFFF6E7DF).copy(alpha = 0.7f))
                 }
             } else {
                 Column(modifier = Modifier.weight(1f)) {
@@ -109,13 +109,16 @@ fun CartScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp),
-                            elevation = CardDefaults.cardElevation(6.dp),
-                            shape = RoundedCornerShape(18.dp)
+                            elevation = CardDefaults.cardElevation(10.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF26272B)
+                            )
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -128,8 +131,8 @@ fun CartScreen(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.product.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                                    Text("Precio: $${item.product.price * item.quantity}", style = MaterialTheme.typography.bodySmall)
+                                    Text(item.product.name, style = MaterialTheme.typography.titleMedium, color = Color(0xFFF6E7DF))
+                                    Text("Precio: $${item.product.price * item.quantity}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
@@ -173,14 +176,14 @@ fun CartScreen(
                 Text(
                     "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color(0xFFF6E7DF),
                     modifier = Modifier.align(Alignment.End)
                 )
                 val totalProductos = cartItems.sumOf { it.quantity }
                 Text(
                     "Total de productos: $totalProductos",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color(0xFFF6E7DF),
                     modifier = Modifier.align(Alignment.End)
                 )
             }
@@ -216,14 +219,14 @@ fun CartScreen(
                     Text(
                         "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color(0xFFF6E7DF),
                         modifier = Modifier.align(Alignment.End)
                     )
                     val totalProductos = cartItems.sumOf { it.quantity }
                     Text(
                         "Total de productos: $totalProductos",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color(0xFFF6E7DF),
                         modifier = Modifier.align(Alignment.End)
                     )
                     Button(
