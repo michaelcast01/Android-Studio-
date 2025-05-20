@@ -1,7 +1,6 @@
 package com.example.tiendasuplementacion.navigation
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +39,7 @@ import com.example.tiendasuplementacion.screen.SettingsScreen
 import com.example.tiendasuplementacion.screen.OrderScreen
 import com.example.tiendasuplementacion.screen.PaymentSelectionScreen
 import com.example.tiendasuplementacion.screen.OrderConfirmationScreen
+import com.example.tiendasuplementacion.screen.PSEPaymentScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,7 +48,6 @@ import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import androidx.compose.ui.graphics.Color
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavGraph(
@@ -178,10 +177,22 @@ fun AppNavGraph(
                         navController = navController,
                         paymentViewModel = paymentViewModel,
                         onPaymentSelected = { payment ->
-                            navController.navigate("orderConfirmation/${payment.id}") {
-                                launchSingleTop = true
+                            if (payment.method == "PSE") {
+                                navController.navigate("psePayment") {
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                navController.navigate("orderConfirmation/${payment.id}") {
+                                    launchSingleTop = true
+                                }
                             }
                         }
+                    )
+                }
+                composable("psePayment") {
+                    PSEPaymentScreen(
+                        navController = navController,
+                        cartViewModel = cartViewModel
                     )
                 }
                 composable(
