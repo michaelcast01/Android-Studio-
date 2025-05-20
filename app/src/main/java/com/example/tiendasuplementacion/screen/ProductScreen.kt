@@ -327,15 +327,9 @@ fun ProductCard(
                 if (isAdmin) {
                     IconButton(
                         onClick = { navController.navigate("editProduct/${product.id}") },
-                        modifier = Modifier.weight(0.5f)
+                        modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar")
-                    }
-                    IconButton(
-                        onClick = { showDeleteConfirmation = true },
-                        modifier = Modifier.weight(0.5f)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
                     }
                 } else {
                     Button(
