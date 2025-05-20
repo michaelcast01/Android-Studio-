@@ -16,10 +16,7 @@ class OrderViewModel : ViewModel() {
         }
     }
 
-    fun createOrder(order: Order) {
-        viewModelScope.launch {
-            repository.create(order)
-            fetchOrders()
-        }
+    suspend fun createOrder(order: Order): Order {
+        return repository.create(order)
     }
 }

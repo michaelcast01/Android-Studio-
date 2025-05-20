@@ -20,8 +20,11 @@ import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tiendasuplementacion.model.Order
 import com.example.tiendasuplementacion.viewmodel.OrderViewModel
+import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
+import com.example.tiendasuplementacion.model.OrderProductDetail
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +33,8 @@ fun OrderConfirmationScreen(
     cartViewModel: CartViewModel,
     selectedPayment: Payment,
     authViewModel: AuthViewModel = viewModel(),
-    orderViewModel: OrderViewModel = viewModel()
+    orderViewModel: OrderViewModel = viewModel(),
+    orderProductViewModel: OrderProductViewModel = viewModel()
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
     val total = cartViewModel.getTotalPrice()
@@ -39,6 +43,8 @@ fun OrderConfirmationScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var createdOrderId by remember { mutableStateOf<Long?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -153,33 +159,48 @@ fun OrderConfirmationScreen(
 
         Button(
             onClick = {
-                isLoading = true
-                try {
-                    // Crear la orden con el método de pago seleccionado
-                    val order = Order(
-                        order_id = 0, // El backend asignará el ID
-                        total = total,
-                        date_order = "", // El backend maneja la fecha
-                        user_id = currentUser?.id ?: 0L,
-                        status_id = 1L, // Estado inicial: pendiente
-                        total_products = totalProducts,
-                        payment_id = selectedPayment.id
-                    )
-                    
-                    // Crear la orden en el backend
-                    orderViewModel.createOrder(order)
-                    
-                    // Limpiar el carrito y volver a productos
-                    cartViewModel.clearCart()
-                    navController.navigate("products") {
-                        launchSingleTop = true
-                        popUpTo("cart") { inclusive = true }
+                coroutineScope.launch {
+                    isLoading = true
+                    try {
+                        // Crear la orden con el método de pago seleccionado
+                        val order = Order(
+                            order_id = 0, // El backend asignará el ID
+                            total = total,
+                            date_order = "", // El backend maneja la fecha
+                            user_id = currentUser?.id ?: 0L,
+                            status_id = 1L, // Estado inicial: pendiente
+                            total_products = totalProducts,
+                            payment_id = selectedPayment.id
+                        )
+                        
+                        // Crear la orden en el backend
+                        val createdOrder = orderViewModel.createOrder(order)
+                        createdOrderId = createdOrder.order_id
+                        
+                        // Crear el detalle de la orden para el primer producto
+                        if (cartItems.isNotEmpty()) {
+                            val firstItem = cartItems.first()
+                            val orderProduct = OrderProductDetail(
+                                order_id = createdOrderId ?: 0L,
+                                product_id = firstItem.product.id,
+                                quantity = firstItem.quantity,
+                                price = firstItem.product.price
+                            )
+                            orderProductViewModel.createOrderProduct(orderProduct)
+                        }
+                        
+                        // Limpiar el carrito y volver a productos
+                        cartViewModel.clearCart()
+                        navController.navigate("products") {
+                            launchSingleTop = true
+                            popUpTo("cart") { inclusive = true }
+                        }
+                    } catch (e: Exception) {
+                        errorMessage = e.message ?: "Error al crear la orden"
+                        showError = true
+                    } finally {
+                        isLoading = false
                     }
-                } catch (e: Exception) {
-                    errorMessage = e.message ?: "Error al crear la orden"
-                    showError = true
-                } finally {
-                    isLoading = false
                 }
             },
             modifier = Modifier.fillMaxWidth(),
