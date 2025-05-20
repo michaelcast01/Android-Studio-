@@ -343,9 +343,11 @@ fun ProductCard(
                         enabled = !isOutOfStock,
                         modifier = Modifier.weight(1f).padding(start = 4.dp)
                     ) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Agregar al carrito")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Agregar")
+                        Icon(
+                            Icons.Default.ShoppingCart,
+                            contentDescription = "Agregar al carrito",
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
