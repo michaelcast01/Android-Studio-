@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -328,7 +329,11 @@ fun ProductCard(
                         containerColor = Color(0xFFF6E7DF)
                     )
                 ) {
-                    Text("+", color = Color(0xFF23242A))
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = "Información del producto",
+                        tint = Color(0xFF23242A)
+                    )
                 }
                 if (isAdmin) {
                     IconButton(
