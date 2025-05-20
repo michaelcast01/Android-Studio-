@@ -60,8 +60,8 @@ fun PaymentScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.06f)
+                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A)
                     )
                 )
             )
@@ -72,10 +72,10 @@ fun PaymentScreen(
                 .padding(16.dp)
         ) {
             Text(
-                "Métodos de Pago",
+                text = "Métodos de Pago",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color(0xFFF6E7DF),
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
 

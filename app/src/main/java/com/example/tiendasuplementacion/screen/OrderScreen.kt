@@ -1,5 +1,6 @@
 package com.example.tiendasuplementacion.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,7 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.UserDetailViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,77 +47,97 @@ fun OrderScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A)
+                    )
+                )
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                item {
-                    Text(
-                        text = "Mis Pedidos",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color(0xFFF6E7DF),
-                        modifier = Modifier.padding(bottom = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Mis Pedidos",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color(0xFFF6E7DF),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFF6E7DF)
                     )
                 }
-
-                userDetails?.orders?.let { orders ->
-                    if (orders.isEmpty()) {
-                        item {
-                            Text(
-                                text = "No tienes pedidos aún",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    } else {
-                        items(orders) { order ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                elevation = CardDefaults.cardElevation(10.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF26272B)
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    userDetails?.orders?.let { orders ->
+                        if (orders.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No tienes pedidos aún",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                    modifier = Modifier.padding(16.dp)
                                 )
-                            ) {
-                                Column(
+                            }
+                        } else {
+                            items(orders) { order ->
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp)
+                                        .padding(vertical = 8.dp),
+                                    elevation = CardDefaults.cardElevation(10.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF26272B)
+                                    )
                                 ) {
-                                    Text(
-                                        text = "Pedido #${order.order_id}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFF6E7DF)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("Fecha: ${order.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                    Text("Estado: ${order.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                    Text("Total: $${order.total}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                    Text("Productos: ${order.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                    if (order.payment_id != null) {
-                                        Text("Método de pago: ${order.payment_id}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                    }
-                                    
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "Productos:",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFF6E7DF)
-                                    )
-                                    order.products.forEach { product ->
-                                        Text("• ${product.name} - $${product.price}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "Pedido #${order.order_id}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFF6E7DF)
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("Fecha: ${order.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Estado: ${order.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Total: $${order.total}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Productos: ${order.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        if (order.payment_id != null) {
+                                            Text("Método de pago: ${order.payment_id}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "Productos:",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFF6E7DF)
+                                        )
+                                        order.products.forEach { product ->
+                                            Text("• ${product.name} - $${product.price}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        }
                                     }
                                 }
                             }
@@ -123,19 +145,19 @@ fun OrderScreen(
                     }
                 }
             }
-        }
 
-        if (showNetworkError) {
-            NetworkErrorBanner(
-                message = networkErrorMessage,
-                onRetry = {
-                    showNetworkError = false
-                    currentUser?.id?.let { userId ->
-                        userDetailViewModel.fetchUserDetails(userId)
-                    }
-                },
-                onDismiss = { showNetworkError = false }
-            )
+            if (showNetworkError) {
+                NetworkErrorBanner(
+                    message = networkErrorMessage,
+                    onRetry = {
+                        showNetworkError = false
+                        currentUser?.id?.let { userId ->
+                            userDetailViewModel.fetchUserDetails(userId)
+                        }
+                    },
+                    onDismiss = { showNetworkError = false }
+                )
+            }
         }
     }
 }

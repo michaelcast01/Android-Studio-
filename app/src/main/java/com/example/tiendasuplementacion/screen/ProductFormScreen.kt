@@ -27,6 +27,8 @@ import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +50,12 @@ fun ProductFormScreen(
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var expanded by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(productId != 0L) }
+    val scrollState = rememberScrollState()
+
+    // Constantes para validación
+    val MAX_NAME_LENGTH = 100
+    val MAX_DESCRIPTION_LENGTH = 255
+    val MAX_IMAGE_URL_LENGTH = 255
 
     val categories by categoryViewModel.categories.observeAsState(emptyList())
     val error by productViewModel.error.collectAsState()
@@ -101,7 +109,8 @@ fun ProductFormScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp),
+                    .padding(24.dp)
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -113,22 +122,24 @@ fun ProductFormScreen(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { if (it.length <= MAX_NAME_LENGTH) name = it },
                     label = { Text("Nombre") },
                     leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = name.isBlank() && showError,
+                    supportingText = { Text("${name.length}/$MAX_NAME_LENGTH") },
                     shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = { if (it.length <= MAX_DESCRIPTION_LENGTH) description = it },
                     label = { Text("Descripción") },
                     leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = description.isBlank() && showError,
+                    supportingText = { Text("${description.length}/$MAX_DESCRIPTION_LENGTH") },
                     shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -159,11 +170,12 @@ fun ProductFormScreen(
 
                 OutlinedTextField(
                     value = imageUrl,
-                    onValueChange = { imageUrl = it },
+                    onValueChange = { if (it.length <= MAX_IMAGE_URL_LENGTH) imageUrl = it },
                     label = { Text("URL de la imagen") },
                     leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = imageUrl.isBlank() && showError,
+                    supportingText = { Text("${imageUrl.length}/$MAX_IMAGE_URL_LENGTH") },
                     shape = RoundedCornerShape(16.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -207,6 +219,13 @@ fun ProductFormScreen(
                         scope.launch {
                             isLoading = true
                             try {
+                                // Validaciones antes de crear/editar
+                                when {
+                                    name.length > MAX_NAME_LENGTH -> throw IllegalArgumentException("El nombre no puede tener más de $MAX_NAME_LENGTH caracteres")
+                                    description.length > MAX_DESCRIPTION_LENGTH -> throw IllegalArgumentException("La descripción no puede tener más de $MAX_DESCRIPTION_LENGTH caracteres")
+                                    imageUrl.length > MAX_IMAGE_URL_LENGTH -> throw IllegalArgumentException("La URL de la imagen no puede tener más de $MAX_IMAGE_URL_LENGTH caracteres")
+                                }
+
                                 val product = Product(
                                     id = if (isEditing) productId else 0,
                                     name = name,
@@ -235,7 +254,10 @@ fun ProductFormScreen(
                                 }
                             } catch (e: Exception) {
                                 Log.e("ProductFormScreen", "Error al ${if (isEditing) "editar" else "crear"} producto", e)
-                                errorMessage = e.message ?: "Error al ${if (isEditing) "editar" else "crear"} el producto"
+                                errorMessage = when {
+                                    e.message?.contains("value too long") == true -> "Uno o más campos exceden la longitud máxima permitida"
+                                    else -> e.message ?: "Error al ${if (isEditing) "editar" else "crear"} el producto"
+                                }
                                 showError = true
                             } finally {
                                 isLoading = false

@@ -1,5 +1,6 @@
 package com.example.tiendasuplementacion.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -14,7 +15,9 @@ import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.model.Payment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
@@ -51,16 +54,28 @@ fun SettingsScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A)
+                    )
+                )
+            )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
             Text(
-                text = "Configuraciones",
+                text = "Configuración",
                 style = MaterialTheme.typography.headlineMedium,
-                color = Color(0xFFF6E7DF)
+                color = Color(0xFFF6E7DF),
+                modifier = Modifier.padding(bottom = 16.dp)
             )
             
             Spacer(modifier = Modifier.padding(16.dp))
