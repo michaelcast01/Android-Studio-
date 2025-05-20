@@ -177,14 +177,13 @@ fun OrderConfirmationScreen(
                         val createdOrder = orderViewModel.createOrder(order)
                         createdOrderId = createdOrder.order_id
                         
-                        // Crear el detalle de la orden para el primer producto
-                        if (cartItems.isNotEmpty()) {
-                            val firstItem = cartItems.first()
+                        // Crear los detalles de la orden para todos los productos
+                        cartItems.forEach { item ->
                             val orderProduct = OrderProductDetail(
                                 order_id = createdOrderId ?: 0L,
-                                product_id = firstItem.product.id,
-                                quantity = firstItem.quantity,
-                                price = firstItem.product.price
+                                product_id = item.product.id,
+                                quantity = item.quantity,
+                                price = item.product.price
                             )
                             orderProductViewModel.createOrderProduct(orderProduct)
                         }
