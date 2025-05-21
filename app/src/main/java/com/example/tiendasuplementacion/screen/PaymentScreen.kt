@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -35,6 +36,7 @@ fun PaymentScreen(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState()
     var showErrorDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf<PaymentDetail?>(null) }
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
@@ -48,10 +50,6 @@ fun PaymentScreen(
         } ?: run {
             Log.e("PaymentScreen", "No user ID available")
         }
-    }
-
-    LaunchedEffect(paymentDetails) {
-        Log.d("PaymentScreen", "Payment details updated: $paymentDetails")
     }
 
     LaunchedEffect(error) {
@@ -84,7 +82,6 @@ fun PaymentScreen(
                 color = Color(0xFFF6E7DF),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            Spacer(modifier = Modifier.height(16.dp))
 
             if (isLoading) {
                 Box(
@@ -92,7 +89,7 @@ fun PaymentScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFFF6E7DF)
                     )
                 }
             } else if (paymentDetails.isEmpty()) {
@@ -101,7 +98,7 @@ fun PaymentScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "No hay métodos de pago registrados",
+                        text = "No hay métodos de pago registrados",
                         color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                 }
@@ -113,9 +110,8 @@ fun PaymentScreen(
                     items(paymentDetails) { paymentDetail ->
                         Card(
                             modifier = Modifier
-                                .fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(4.dp),
-                            shape = RoundedCornerShape(16.dp),
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = Color(0xFF26272B)
                             )
@@ -134,62 +130,87 @@ fun PaymentScreen(
                                         text = paymentDetail.payment.name,
                                         style = MaterialTheme.typography.titleMedium,
                                         color = Color(0xFFF6E7DF),
-                                        fontWeight = FontWeight.Bold
+                                        modifier = Modifier.weight(1f),
+                                        softWrap = true,
+                                        overflow = TextOverflow.Visible
                                     )
-                                    Icon(
-                                        when (paymentDetail.payment.name) {
-                                            "DEBITO" -> Icons.Default.CreditCard
-                                            "CREDITO" -> Icons.Default.CreditCard
-                                            "CASH" -> Icons.Default.AttachMoney
-                                            else -> Icons.Default.Payment
-                                        },
-                                        contentDescription = "Tipo de pago",
-                                        tint = Color(0xFFF6E7DF)
-                                    )
+                                    IconButton(
+                                        onClick = { showDeleteConfirmation = paymentDetail }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Eliminar método de pago",
+                                            tint = Color(0xFFF6E7DF)
+                                        )
+                                    }
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(8.dp))
-                                
-                                if (!paymentDetail.cardNumber.isNullOrEmpty()) {
+
+                                if (paymentDetail.cardNumber != null) {
                                     Text(
-                                        text = "Número de tarjeta: ${paymentDetail.cardNumber}",
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
+                                        text = "•••• •••• •••• ${paymentDetail.cardNumber.takeLast(4)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                        softWrap = true,
+                                        overflow = TextOverflow.Visible
                                     )
-                                }
-                                
-                                if (!paymentDetail.cardholderName.isNullOrEmpty()) {
+                                    Text(
+                                        text = "Vence: ${paymentDetail.expirationDate}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                        softWrap = true,
+                                        overflow = TextOverflow.Visible
+                                    )
                                     Text(
                                         text = "Titular: ${paymentDetail.cardholderName}",
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                        softWrap = true,
+                                        overflow = TextOverflow.Visible
                                     )
                                 }
 
-                                if (!paymentDetail.country.isNullOrEmpty()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Text(
+                                    text = "Dirección de Facturación",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = Color(0xFFF6E7DF),
+                                    fontWeight = FontWeight.Bold,
+                                    softWrap = true,
+                                    overflow = TextOverflow.Visible
+                                )
+                                Text(
+                                    text = paymentDetail.addressLine1 ?: "",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                    softWrap = true,
+                                    overflow = TextOverflow.Visible
+                                )
+                                paymentDetail.addressLine2?.let { addressLine2 ->
                                     Text(
-                                        text = "Dirección de facturación:",
-                                        color = Color(0xFFF6E7DF),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = paymentDetail.addressLine1 ?: "",
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
-                                    )
-                                    if (!paymentDetail.addressLine2.isNullOrEmpty()) {
-                                        Text(
-                                            text = paymentDetail.addressLine2,
-                                            color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
-                                        )
-                                    }
-                                    Text(
-                                        text = "${paymentDetail.city}, ${paymentDetail.stateOrProvince}",
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
-                                    )
-                                    Text(
-                                        text = "${paymentDetail.country} ${paymentDetail.postalCode}",
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.8f)
+                                        text = addressLine2,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                        softWrap = true,
+                                        overflow = TextOverflow.Visible
                                     )
                                 }
+                                Text(
+                                    text = "${paymentDetail.city ?: ""}, ${paymentDetail.stateOrProvince ?: ""}".trim().trimStart(','),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                    softWrap = true,
+                                    overflow = TextOverflow.Visible
+                                )
+                                Text(
+                                    text = "${paymentDetail.country ?: ""} ${paymentDetail.postalCode ?: ""}".trim(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                    softWrap = true,
+                                    overflow = TextOverflow.Visible
+                                )
                             }
                         }
                     }
@@ -197,11 +218,8 @@ fun PaymentScreen(
             }
         }
 
-        // Agregar FloatingActionButton
         FloatingActionButton(
-            onClick = {
-                navController.navigate("payment_config")
-            },
+            onClick = { navController.navigate("payment_config") },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
@@ -234,8 +252,8 @@ fun PaymentScreen(
                 showErrorDialog = false
                 viewModel.clearError()
             },
-            title = { Text("Error") },
-            text = { Text(error ?: "Ha ocurrido un error") },
+            title = { Text(text = "Error") },
+            text = { Text(text = error ?: "Ha ocurrido un error") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -243,7 +261,32 @@ fun PaymentScreen(
                         viewModel.clearError()
                     }
                 ) {
-                    Text("OK")
+                    Text(text = "OK")
+                }
+            }
+        )
+    }
+
+    showDeleteConfirmation?.let { paymentDetail ->
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = null },
+            title = { Text(text = "Confirmar Eliminación") },
+            text = { 
+                Text(text = "¿Estás seguro que deseas eliminar este método de pago?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deletePaymentDetail(paymentDetail.id)
+                        showDeleteConfirmation = null
+                    }
+                ) {
+                    Text(text = "Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = null }) {
+                    Text(text = "Cancelar")
                 }
             }
         )

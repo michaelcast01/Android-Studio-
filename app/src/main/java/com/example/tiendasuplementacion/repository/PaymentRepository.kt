@@ -6,6 +6,7 @@ import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.network.RetrofitClient
 import retrofit2.HttpException
 import java.io.IOException
+import kotlin.jvm.Throws
 
 class PaymentRepository {
     private val service = RetrofitClient.paymentService
@@ -103,6 +104,31 @@ class PaymentRepository {
             Log.e("PaymentRepository", "IO error", e)
             throw Exception("Error de conexión: ${e.message}")
         } catch (e: Exception) {
+            Log.e("PaymentRepository", "Unexpected error", e)
+            throw Exception("Error inesperado: ${e.message}")
+        }
+    }
+
+    suspend fun deletePaymentDetail(id: Long) {
+        Log.d("PaymentRepository", "Attempting to delete payment detail: $id")
+        try {
+            service.deletePaymentDetail(id)
+            Log.d("PaymentRepository", "Successfully deleted payment detail")
+        } catch (e: HttpException) {
+            if (e.code() == 204 || e.code() == 200) {
+                Log.d("PaymentRepository", "Delete successful with status code: ${e.code()}")
+                return
+            }
+            Log.e("PaymentRepository", "HTTP error: ${e.code()}", e)
+            throw Exception("Error del servidor: ${e.message()}")
+        } catch (e: IOException) {
+            Log.e("PaymentRepository", "IO error", e)
+            throw Exception("Error de conexión: ${e.message}")
+        } catch (e: Exception) {
+            if (e is KotlinNullPointerException && e.message?.contains("Response") == true) {
+                Log.d("PaymentRepository", "Delete successful with empty response")
+                return
+            }
             Log.e("PaymentRepository", "Unexpected error", e)
             throw Exception("Error inesperado: ${e.message}")
         }

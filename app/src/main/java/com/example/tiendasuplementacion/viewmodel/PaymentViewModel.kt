@@ -128,4 +128,34 @@ class PaymentViewModel : ViewModel() {
             }
         }
     }
+
+    fun deletePaymentDetail(paymentDetailId: Long) {
+        // Optimistically remove the payment detail from the UI
+        val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
+        val paymentDetailToRemove = currentList.find { it.id == paymentDetailId }
+        
+        if (paymentDetailToRemove != null) {
+            // Store the current state in case we need to rollback
+            val previousList = currentList.toList()
+            
+            // Update UI immediately
+            currentList.remove(paymentDetailToRemove)
+            _paymentDetails.value = currentList
+
+            // Make the API call
+            viewModelScope.launch {
+                try {
+                    _error.value = null
+                    repository.deletePaymentDetail(paymentDetailId)
+                    Log.d("PaymentViewModel", "Successfully deleted payment detail: $paymentDetailId")
+                    // No necesitamos actualizar la UI aquí porque ya lo hicimos optimistamente
+                } catch (e: Exception) {
+                    // Si la eliminación falla, revertimos al estado anterior
+                    Log.e("PaymentViewModel", "Error deleting payment detail", e)
+                    _error.value = "Error al eliminar el método de pago. Por favor, intente nuevamente."
+                    _paymentDetails.value = previousList
+                }
+            }
+        }
+    }
 }
