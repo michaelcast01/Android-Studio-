@@ -80,52 +80,55 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.padding(16.dp))
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = { showPaymentMethods = !showPaymentMethods },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp)
+            // Solo mostrar los botones de métodos de pago si NO es un administrador
+            if (currentUser?.role_id != 2L) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Ver Métodos de Pago")
+                    Button(
+                        onClick = { showPaymentMethods = !showPaymentMethods },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                    ) {
+                        Text("Ver Métodos de Pago")
+                    }
+                    
+                    Button(
+                        onClick = { showAddPaymentDialog = true },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp)
+                    ) {
+                        Text("Agregar Método")
+                    }
                 }
                 
-                Button(
-                    onClick = { showAddPaymentDialog = true },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp)
-                ) {
-                    Text("Agregar Método")
-                }
-            }
-            
-            if (showPaymentMethods) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    elevation = CardDefaults.cardElevation(10.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF26272B)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Métodos de Pago Disponibles",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color(0xFFF6E7DF)
+                if (showPaymentMethods) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        elevation = CardDefaults.cardElevation(10.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF26272B)
                         )
-                        Spacer(modifier = Modifier.padding(8.dp))
-                        settingDetail?.payments?.forEach { payment ->
-                            Text("• ${payment.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                        } ?: Text("No hay métodos de pago configurados", color = Color(0xFFF6E7DF).copy(alpha = 0.7f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Métodos de Pago Disponibles",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color(0xFFF6E7DF)
+                            )
+                            Spacer(modifier = Modifier.padding(8.dp))
+                            settingDetail?.payments?.forEach { payment ->
+                                Text("• ${payment.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                            } ?: Text("No hay métodos de pago configurados", color = Color(0xFFF6E7DF).copy(alpha = 0.7f))
+                        }
                     }
                 }
             }
