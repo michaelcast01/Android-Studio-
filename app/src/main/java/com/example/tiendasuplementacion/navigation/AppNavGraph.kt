@@ -62,7 +62,7 @@ fun AppNavGraph(
         listOf(
             NavBarItem("products", "Productos", Icons.Default.Store),
             NavBarItem("payments", "Pagos", Icons.Default.Payment),
-            NavBarItem("orders", "Pedidos", Icons.Default.List),
+            NavBarItem("orders", "Historial", Icons.Default.List),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     } else {
@@ -70,7 +70,7 @@ fun AppNavGraph(
             NavBarItem("products", "Productos", Icons.Default.Store),
             NavBarItem("cart", "Carrito", Icons.Default.ShoppingCart),
             NavBarItem("payments", "Pagos", Icons.Default.Payment),
-            NavBarItem("orders", "Pedidos", Icons.Default.List),
+            NavBarItem("orders", "Historial", Icons.Default.List),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     }

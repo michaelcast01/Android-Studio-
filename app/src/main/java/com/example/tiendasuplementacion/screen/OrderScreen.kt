@@ -65,7 +65,7 @@ fun OrderScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Mis Pedidos",
+                text = "Historial de Compras",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color(0xFFF6E7DF),
                 modifier = Modifier.padding(bottom = 16.dp)
