@@ -2,20 +2,51 @@ package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
+import com.example.tiendasuplementacion.model.PaymentMethods
+import com.example.tiendasuplementacion.component.NetworkErrorBanner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPaymentsScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: PaymentViewModel = viewModel()
 ) {
+    val payments by viewModel.payments.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val error by viewModel.error.observeAsState()
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchPayments()
+    }
+
+    LaunchedEffect(error) {
+        error?.let {
+            showNetworkError = true
+            networkErrorMessage = it
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -39,6 +70,86 @@ fun AdminPaymentsScreen(
                 color = Color(0xFFF6E7DF),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFF6E7DF))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(payments) { payment ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            elevation = CardDefaults.cardElevation(4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF26272B)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = when (payment.method) {
+                                        PaymentMethods.CREDIT_CARD, PaymentMethods.DEBIT_CARD -> Icons.Default.CreditCard
+                                        else -> Icons.Default.AccountBalance
+                                    },
+                                    contentDescription = null,
+                                    tint = Color(0xFFF6E7DF),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = payment.name ?: "Sin nombre",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color(0xFFF6E7DF)
+                                    )
+                                    Text(
+                                        text = payment.method ?: "Método no especificado",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Botón flotante para agregar nuevo método de pago
+        FloatingActionButton(
+            onClick = { /* TODO: Implementar creación de método de pago */ },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = Color(0xFFF6E7DF),
+            contentColor = Color(0xFF23242A)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Agregar método de pago")
+        }
+
+        if (showNetworkError) {
+            NetworkErrorBanner(
+                message = networkErrorMessage,
+                onRetry = {
+                    showNetworkError = false
+                    viewModel.fetchPayments()
+                },
+                onDismiss = { showNetworkError = false }
             )
         }
     }
