@@ -174,7 +174,45 @@ fun PaymentSelectionScreen(
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                                             )
+                                            Text(
+                                                text = "Vence: ${paymentDetail.expirationDate}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                                            )
+                                            Text(
+                                                text = "Titular: ${paymentDetail.cardholderName}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                                            )
                                         }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        // Dirección de facturación
+                                        Text(
+                                            text = "Dirección de facturación:",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = buildString {
+                                                append(paymentDetail.addressLine1)
+                                                if (!paymentDetail.addressLine2.isNullOrBlank()) {
+                                                    append(", ${paymentDetail.addressLine2}")
+                                                }
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                                        )
+                                        Text(
+                                            text = "${paymentDetail.city}, ${paymentDetail.stateOrProvince}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                                        )
+                                        Text(
+                                            text = "${paymentDetail.country} ${paymentDetail.postalCode}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                                        )
                                     }
                                 }
                             }
