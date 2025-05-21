@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -37,6 +39,7 @@ fun PaymentScreen(
     val error by viewModel.error.observeAsState()
     var showErrorDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf<PaymentDetail?>(null) }
+    var paymentToEdit by remember { mutableStateOf<PaymentDetail?>(null) }
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
@@ -134,14 +137,25 @@ fun PaymentScreen(
                                         softWrap = true,
                                         overflow = TextOverflow.Visible
                                     )
-                                    IconButton(
-                                        onClick = { showDeleteConfirmation = paymentDetail }
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = "Eliminar método de pago",
-                                            tint = Color(0xFFF6E7DF)
-                                        )
+                                    Row {
+                                        IconButton(
+                                            onClick = { paymentToEdit = paymentDetail }
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Editar método de pago",
+                                                tint = Color(0xFFF6E7DF)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { showDeleteConfirmation = paymentDetail }
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar método de pago",
+                                                tint = Color(0xFFF6E7DF)
+                                            )
+                                        }
                                     }
                                 }
 
@@ -286,6 +300,116 @@ fun PaymentScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = null }) {
+                    Text(text = "Cancelar")
+                }
+            }
+        )
+    }
+
+    // Edit Dialog
+    paymentToEdit?.let { paymentDetail ->
+        var editedCardNumber by remember { mutableStateOf(paymentDetail.cardNumber ?: "") }
+        var editedExpirationDate by remember { mutableStateOf(paymentDetail.expirationDate ?: "") }
+        var editedCardholderName by remember { mutableStateOf(paymentDetail.cardholderName ?: "") }
+        var editedCountry by remember { mutableStateOf(paymentDetail.country ?: "") }
+        var editedAddressLine1 by remember { mutableStateOf(paymentDetail.addressLine1 ?: "") }
+        var editedAddressLine2 by remember { mutableStateOf(paymentDetail.addressLine2 ?: "") }
+        var editedCity by remember { mutableStateOf(paymentDetail.city ?: "") }
+        var editedStateProvince by remember { mutableStateOf(paymentDetail.stateOrProvince ?: "") }
+        var editedPostalCode by remember { mutableStateOf(paymentDetail.postalCode ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { paymentToEdit = null },
+            title = { Text(text = "Editar Método de Pago") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (paymentDetail.payment.name in listOf("DEBITO", "CREDITO")) {
+                        OutlinedTextField(
+                            value = editedCardNumber,
+                            onValueChange = { editedCardNumber = it },
+                            label = { Text("Número de Tarjeta") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = editedExpirationDate,
+                            onValueChange = { editedExpirationDate = it },
+                            label = { Text("Fecha de Vencimiento") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = editedCardholderName,
+                            onValueChange = { editedCardholderName = it },
+                            label = { Text("Nombre del Titular") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = editedCountry,
+                        onValueChange = { editedCountry = it },
+                        label = { Text("País") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedAddressLine1,
+                        onValueChange = { editedAddressLine1 = it },
+                        label = { Text("Dirección Línea 1") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedAddressLine2,
+                        onValueChange = { editedAddressLine2 = it },
+                        label = { Text("Dirección Línea 2 (Opcional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedCity,
+                        onValueChange = { editedCity = it },
+                        label = { Text("Ciudad") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedStateProvince,
+                        onValueChange = { editedStateProvince = it },
+                        label = { Text("Estado/Provincia") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = editedPostalCode,
+                        onValueChange = { editedPostalCode = it },
+                        label = { Text("Código Postal") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val updatedPaymentDetail = paymentDetail.copy(
+                            cardNumber = if (paymentDetail.payment.name in listOf("DEBITO", "CREDITO")) editedCardNumber else null,
+                            expirationDate = if (paymentDetail.payment.name in listOf("DEBITO", "CREDITO")) editedExpirationDate else null,
+                            cardholderName = if (paymentDetail.payment.name in listOf("DEBITO", "CREDITO")) editedCardholderName else null,
+                            country = editedCountry,
+                            addressLine1 = editedAddressLine1,
+                            addressLine2 = editedAddressLine2.ifBlank { null },
+                            city = editedCity,
+                            stateOrProvince = editedStateProvince,
+                            postalCode = editedPostalCode
+                        )
+                        viewModel.updatePaymentDetail(updatedPaymentDetail)
+                        paymentToEdit = null
+                    }
+                ) {
+                    Text(text = "Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { paymentToEdit = null }) {
                     Text(text = "Cancelar")
                 }
             }

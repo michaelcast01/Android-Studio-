@@ -133,4 +133,24 @@ class PaymentRepository {
             throw Exception("Error inesperado: ${e.message}")
         }
     }
+
+    suspend fun updatePaymentDetail(id: Long, paymentDetail: PaymentDetail): PaymentDetail {
+        Log.d("PaymentRepository", "Attempting to update payment detail: $id")
+        Log.d("PaymentRepository", "Update data: $paymentDetail")
+        return try {
+            val response = service.updatePaymentDetail(id, paymentDetail)
+            Log.d("PaymentRepository", "Successfully updated payment detail. Response: $response")
+            response
+        } catch (e: HttpException) {
+            Log.e("PaymentRepository", "HTTP error: ${e.code()}", e)
+            Log.e("PaymentRepository", "Error body: ${e.response()?.errorBody()?.string()}")
+            throw Exception("Error del servidor: ${e.message()}")
+        } catch (e: IOException) {
+            Log.e("PaymentRepository", "IO error", e)
+            throw Exception("Error de conexión: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("PaymentRepository", "Unexpected error", e)
+            throw Exception("Error inesperado: ${e.message}")
+        }
+    }
 }

@@ -158,4 +158,45 @@ class PaymentViewModel : ViewModel() {
             }
         }
     }
+
+    fun updatePaymentDetail(paymentDetail: PaymentDetail) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+
+                // Guardamos el estado actual para posible rollback
+                val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
+                val previousList = currentList.toList()
+
+                // Actualizamos optimistamente la UI
+                val index = currentList.indexOfFirst { it.id == paymentDetail.id }
+                if (index != -1) {
+                    currentList[index] = paymentDetail
+                    _paymentDetails.value = currentList
+
+                    // Hacemos la llamada al API
+                    val updatedPayment = repository.updatePaymentDetail(paymentDetail.id, paymentDetail)
+                    Log.d("PaymentViewModel", "Successfully updated payment detail: ${updatedPayment.id}")
+                } else {
+                    throw Exception("No se encontró el método de pago a actualizar")
+                }
+            } catch (e: Exception) {
+                Log.e("PaymentViewModel", "Error updating payment detail", e)
+                _error.value = "Error al actualizar el método de pago. Por favor, intente nuevamente."
+                
+                // Revertimos los cambios en caso de error
+                _paymentDetails.value?.let { currentList ->
+                    val index = currentList.indexOfFirst { it.id == paymentDetail.id }
+                    if (index != -1) {
+                        val revertedList = currentList.toMutableList()
+                        revertedList[index] = _paymentDetails.value!![index]
+                        _paymentDetails.value = revertedList
+                    }
+                }
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

@@ -28,4 +28,7 @@ interface PaymentApiService {
 
     @DELETE("/api/additional-info-payments/{id}")
     suspend fun deletePaymentDetail(@Path("id") id: Long)
+
+    @PUT("/api/additional-info-payments/{id}")
+    suspend fun updatePaymentDetail(@Path("id") id: Long, @Body paymentDetail: PaymentDetail): PaymentDetail
 }
