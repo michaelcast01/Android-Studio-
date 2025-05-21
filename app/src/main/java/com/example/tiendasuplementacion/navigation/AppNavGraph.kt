@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.navigation
 
-import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,10 +41,9 @@ import com.example.tiendasuplementacion.screen.PSEPaymentScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tiendasuplementacion.model.Order
-import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
