@@ -5,7 +5,7 @@ import com.example.tiendasuplementacion.model.PaymentDetail
 import retrofit2.http.*
 
 interface PaymentApiService {
-    @GET("api/additional-info-payment-details/user/{userId}")
+    @GET("/api/additional-info-payments-details/user/{userId}")
     suspend fun getPaymentDetails(@Path("userId") userId: Long): List<PaymentDetail>
 
     @GET("api/payments")
