@@ -2,6 +2,7 @@ package com.example.tiendasuplementacion.viewmodel
 
 import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.Payment
+import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.repository.PaymentRepository
 import kotlinx.coroutines.launch
 
@@ -9,6 +10,9 @@ class PaymentViewModel : ViewModel() {
     private val repository = PaymentRepository()
     private val _payments = MutableLiveData<List<Payment>>()
     val payments: LiveData<List<Payment>> = _payments
+
+    private val _paymentDetails = MutableLiveData<List<PaymentDetail>>()
+    val paymentDetails: LiveData<List<PaymentDetail>> = _paymentDetails
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -46,6 +50,21 @@ class PaymentViewModel : ViewModel() {
                 _payments.value = currentList
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al crear el método de pago"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun fetchPaymentDetails(userId: Long) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                _paymentDetails.value = repository.getPaymentDetails(userId)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al cargar los detalles de pago"
+                _paymentDetails.value = emptyList()
             } finally {
                 _isLoading.value = false
             }

@@ -1,12 +1,25 @@
 package com.example.tiendasuplementacion.repository
 
 import com.example.tiendasuplementacion.model.Payment
+import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.network.RetrofitClient
 import retrofit2.HttpException
 import java.io.IOException
 
 class PaymentRepository {
     private val service = RetrofitClient.paymentService
+
+    suspend fun getPaymentDetails(userId: Long): List<PaymentDetail> {
+        return try {
+            service.getPaymentDetails(userId)
+        } catch (e: HttpException) {
+            throw Exception("Error del servidor: ${e.message()}")
+        } catch (e: IOException) {
+            throw Exception("Error de conexión: ${e.message}")
+        } catch (e: Exception) {
+            throw Exception("Error inesperado: ${e.message}")
+        }
+    }
 
     suspend fun getAll(): List<Payment> {
         return try {
