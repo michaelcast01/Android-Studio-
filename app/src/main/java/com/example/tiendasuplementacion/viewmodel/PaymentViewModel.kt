@@ -1,5 +1,6 @@
 package com.example.tiendasuplementacion.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.model.PaymentDetail
@@ -57,12 +58,16 @@ class PaymentViewModel : ViewModel() {
     }
 
     fun fetchPaymentDetails(userId: Long) {
+        Log.d("PaymentViewModel", "Fetching payment details for user: $userId")
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = null
-                _paymentDetails.value = repository.getPaymentDetails(userId)
+                val details = repository.getPaymentDetails(userId)
+                Log.d("PaymentViewModel", "Received payment details: $details")
+                _paymentDetails.value = details
             } catch (e: Exception) {
+                Log.e("PaymentViewModel", "Error fetching payment details", e)
                 _error.value = e.message ?: "Error al cargar los detalles de pago"
                 _paymentDetails.value = emptyList()
             } finally {

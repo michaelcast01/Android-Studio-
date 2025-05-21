@@ -2,6 +2,7 @@ package com.example.tiendasuplementacion.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiendasuplementacion.model.User
@@ -22,6 +23,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    init {
+        // Restaurar la sesión al iniciar
+        restoreSession()
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             try {
@@ -32,6 +38,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val user = repository.login(email, password)
                 _currentUser.value = user
                 _isAuthenticated.value = true
+                // Guardar la sesión
+                saveSession(user)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -54,6 +62,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 repository.create(user)
                 _currentUser.value = user
                 _isAuthenticated.value = true
+                // Guardar la sesión
+                saveSession(user)
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -62,14 +72,54 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun saveSession(user: User) {
+        Log.d("AuthViewModel", "Saving session for user: $user")
+        val sharedPreferences = getApplication<Application>().getSharedPreferences("auth", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putLong("user_id", user.id)
+            putString("username", user.username)
+            putString("email", user.email)
+            putLong("role_id", user.role_id)
+            putLong("setting_id", user.setting_id ?: 0L)
+            apply()
+        }
+    }
+
     fun restoreSession() {
         viewModelScope.launch {
-            _isAuthenticated.value = false
+            val sharedPreferences = getApplication<Application>().getSharedPreferences("auth", Context.MODE_PRIVATE)
+            val userId = sharedPreferences.getLong("user_id", 0L)
+            if (userId != 0L) {
+                val username = sharedPreferences.getString("username", "") ?: ""
+                val email = sharedPreferences.getString("email", "") ?: ""
+                val roleId = sharedPreferences.getLong("role_id", 0L)
+                val settingId = sharedPreferences.getLong("setting_id", 0L)
+                
+                val user = User(
+                    id = userId,
+                    username = username,
+                    email = email,
+                    password = "", // No almacenamos la contraseña
+                    role_id = roleId,
+                    setting_id = settingId
+                )
+                Log.d("AuthViewModel", "Restoring session for user: $user")
+                _currentUser.value = user
+                _isAuthenticated.value = true
+            } else {
+                Log.d("AuthViewModel", "No session found")
+                _isAuthenticated.value = false
+                _currentUser.value = null
+            }
         }
     }
 
     fun logout() {
         viewModelScope.launch {
+            // Limpiar SharedPreferences
+            val sharedPreferences = getApplication<Application>().getSharedPreferences("auth", Context.MODE_PRIVATE)
+            sharedPreferences.edit().clear().apply()
+            
             _isAuthenticated.value = false
             _currentUser.value = null
             _error.value = null
