@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import com.example.tiendasuplementacion.model.PaymentMethods
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
+import com.example.tiendasuplementacion.model.Payment
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +36,8 @@ fun AdminPaymentsScreen(
     val error by viewModel.error.observeAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
+    var showAddPaymentDialog by remember { mutableStateOf(false) }
+    var newPaymentName by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
@@ -132,7 +135,7 @@ fun AdminPaymentsScreen(
 
         // Botón flotante para agregar nuevo método de pago
         FloatingActionButton(
-            onClick = { /* TODO: Implementar creación de método de pago */ },
+            onClick = { showAddPaymentDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
@@ -150,6 +153,65 @@ fun AdminPaymentsScreen(
                     viewModel.fetchPayments()
                 },
                 onDismiss = { showNetworkError = false }
+            )
+        }
+
+        if (showAddPaymentDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showAddPaymentDialog = false
+                    newPaymentName = ""
+                },
+                title = {
+                    Text(
+                        "Agregar Método de Pago",
+                        color = Color(0xFFF6E7DF)
+                    )
+                },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = newPaymentName,
+                            onValueChange = { newPaymentName = it },
+                            label = { Text("Nombre del método de pago") },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFFF6E7DF),
+                                unfocusedTextColor = Color(0xFFF6E7DF),
+                                focusedBorderColor = Color(0xFFF6E7DF),
+                                unfocusedBorderColor = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                focusedLabelColor = Color(0xFFF6E7DF),
+                                unfocusedLabelColor = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                cursorColor = Color(0xFFF6E7DF)
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newPaymentName.isNotBlank()) {
+                                viewModel.createPayment(Payment(name = newPaymentName))
+                                showAddPaymentDialog = false
+                                newPaymentName = ""
+                            }
+                        }
+                    ) {
+                        Text("Agregar", color = Color(0xFFF6E7DF))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showAddPaymentDialog = false
+                            newPaymentName = ""
+                        }
+                    ) {
+                        Text("Cancelar", color = Color(0xFFF6E7DF))
+                    }
+                },
+                containerColor = Color(0xFF26272B),
+                shape = RoundedCornerShape(16.dp)
             )
         }
     }
