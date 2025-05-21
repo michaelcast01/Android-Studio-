@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,16 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.example.tiendasuplementacion.screen.LoginScreen
-import com.example.tiendasuplementacion.screen.ProductScreen
-import com.example.tiendasuplementacion.screen.CartScreen
-import com.example.tiendasuplementacion.screen.PaymentScreen
-import com.example.tiendasuplementacion.screen.ProductFormScreen
-import com.example.tiendasuplementacion.screen.SettingsScreen
-import com.example.tiendasuplementacion.screen.OrderScreen
-import com.example.tiendasuplementacion.screen.PaymentSelectionScreen
-import com.example.tiendasuplementacion.screen.OrderConfirmationScreen
-import com.example.tiendasuplementacion.screen.PaymentConfigScreen
+import com.example.tiendasuplementacion.screen.*
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,6 +53,8 @@ fun AppNavGraph(
     val items = if (currentUser?.role_id == 2L) {
         listOf(
             NavBarItem("products", "Productos", Icons.Default.Store),
+            NavBarItem("admin_clients", "Clientes", Icons.Default.People),
+            NavBarItem("admin_payments", "Métodos de Pagos", Icons.Default.Payment),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     } else {
@@ -168,6 +162,12 @@ fun AppNavGraph(
                         userDetailViewModel = viewModel(),
                         authViewModel = authViewModel
                     ) 
+                }
+                composable("admin_clients") {
+                    AdminClientsScreen(navController)
+                }
+                composable("admin_payments") {
+                    AdminPaymentsScreen(navController)
                 }
                 composable("paymentSelection") {
                     PaymentSelectionScreen(
