@@ -124,7 +124,14 @@ fun AdminPaymentsScreen(
                                         color = Color(0xFFF6E7DF)
                                     )
                                     Text(
-                                        text = payment.method ?: "Método no especificado",
+                                        text = when {
+                                            payment.method != null -> payment.method
+                                            payment.name.contains("PSE", ignoreCase = true) -> PaymentMethods.PSE
+                                            payment.name.contains("CREDITO", ignoreCase = true) -> PaymentMethods.CREDIT_CARD
+                                            payment.name.contains("DEBITO", ignoreCase = true) -> PaymentMethods.DEBIT_CARD
+                                            payment.name.contains("EFECTIVO", ignoreCase = true) -> PaymentMethods.CASH
+                                            else -> "Método de pago"
+                                        },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                                     )
