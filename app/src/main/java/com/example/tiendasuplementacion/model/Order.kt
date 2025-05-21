@@ -9,6 +9,6 @@ data class Order(
     val user_id: Long,
     val status_id: Long,
     val total_products: Int,
-    val payment_id: Long?
+    val additional_info_payment_id: Long?
 )
 

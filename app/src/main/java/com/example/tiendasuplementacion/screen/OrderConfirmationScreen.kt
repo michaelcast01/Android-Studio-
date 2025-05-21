@@ -47,8 +47,10 @@ fun OrderConfirmationScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
+    var showSuccess by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var createdOrderId by remember { mutableStateOf<Long?>(null) }
+    var finalOrderTotal by remember { mutableStateOf(0.0) }
     val coroutineScope = rememberCoroutineScope()
 
     Column(
@@ -317,12 +319,13 @@ fun OrderConfirmationScreen(
                             user_id = currentUser?.id ?: 0L,
                             status_id = 1L, // Estado inicial: pendiente
                             total_products = totalProducts,
-                            payment_id = selectedPaymentDetail.id // Usar el ID del detalle del método de pago
+                            additional_info_payment_id = selectedPaymentDetail.id
                         )
                         
                         // Crear la orden en el backend
                         val createdOrder = orderViewModel.createOrder(order)
                         createdOrderId = createdOrder.order_id
+                        finalOrderTotal = total // Guardamos el total final
                         
                         // Crear los detalles de la orden para todos los productos
                         cartItems.forEach { item ->
@@ -335,12 +338,10 @@ fun OrderConfirmationScreen(
                             orderProductViewModel.createOrderProduct(orderProduct)
                         }
                         
-                        // Limpiar el carrito y volver a productos
+                        // Limpiar el carrito y mostrar mensaje de éxito
                         cartViewModel.clearCart()
-                        navController.navigate("products") {
-                            launchSingleTop = true
-                            popUpTo("cart") { inclusive = true }
-                        }
+                        showSuccess = true
+                        
                     } catch (e: Exception) {
                         errorMessage = e.message ?: "Error al crear la orden"
                         showError = true
@@ -384,6 +385,54 @@ fun OrderConfirmationScreen(
                     onClick = { showError = false }
                 ) {
                     Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showSuccess) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSuccess = false
+                navController.navigate("products") {
+                    launchSingleTop = true
+                    popUpTo("cart") { inclusive = true }
+                }
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Payment,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("¡Compra Exitosa!") },
+            text = { 
+                Column {
+                    Text("Tu orden ha sido creada correctamente.")
+                    Text(
+                        text = "Número de orden: ${createdOrderId}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Text(
+                        text = "Total: $${String.format("%.2f", finalOrderTotal)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { 
+                        showSuccess = false
+                        navController.navigate("products") {
+                            launchSingleTop = true
+                            popUpTo("cart") { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Continuar")
                 }
             }
         )
