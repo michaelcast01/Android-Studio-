@@ -32,7 +32,7 @@ fun OrderScreen(
     userDetailViewModel: UserDetailViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
-    val userDetails by userDetailViewModel.userDetails.observeAsState()
+    val userDetail by userDetailViewModel.userDetail.observeAsState()
     val isLoading by userDetailViewModel.isLoading.observeAsState(false)
     val error by userDetailViewModel.error.observeAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -93,7 +93,7 @@ fun OrderScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    userDetails?.orders?.let { orders ->
+                    userDetail?.orders?.let { orders ->
                         if (orders.isEmpty()) {
                             item {
                                 Text(

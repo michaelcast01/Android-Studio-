@@ -27,4 +27,7 @@ interface UserApiService {
 
     @GET("/api/user-details/{id}")
     suspend fun getUserDetails(@Path("id") id: Long): UserDetail
+
+    @GET("/api/user-details/role/{roleId}")
+    suspend fun getUserDetailsByRole(@Path("roleId") roleId: Long): List<UserDetail>
 }

@@ -9,4 +9,8 @@ class UserDetailRepository {
     suspend fun getUserDetails(id: Long): UserDetail {
         return service.getUserDetails(id)
     }
+
+    suspend fun getUserDetailsByRole(roleId: Long): List<UserDetail> {
+        return service.getUserDetailsByRole(roleId)
+    }
 } 
