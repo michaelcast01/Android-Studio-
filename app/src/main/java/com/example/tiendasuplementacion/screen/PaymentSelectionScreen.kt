@@ -103,52 +103,6 @@ fun PaymentSelectionScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // PSE Option
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { 
-                                    onPaymentSelected(
-                                        Payment(
-                                            name = "PSE",
-                                            method = PaymentMethods.PSE
-                                        )
-                                    )
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF26272B)
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    Icons.Default.Payment,
-                                    contentDescription = "PSE",
-                                    tint = Color(0xFFF6E7DF),
-                                    modifier = Modifier.size(32.dp)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column {
-                                    Text(
-                                        text = "PSE",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color(0xFFF6E7DF)
-                                    )
-                                    Text(
-                                        text = "Pago Seguros en Línea",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
                     // Other payment methods
                     items(payments.filter { it.isActive }) { payment ->
                         Card(

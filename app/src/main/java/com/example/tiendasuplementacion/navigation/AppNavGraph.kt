@@ -37,7 +37,6 @@ import com.example.tiendasuplementacion.screen.SettingsScreen
 import com.example.tiendasuplementacion.screen.OrderScreen
 import com.example.tiendasuplementacion.screen.PaymentSelectionScreen
 import com.example.tiendasuplementacion.screen.OrderConfirmationScreen
-import com.example.tiendasuplementacion.screen.PSEPaymentScreen
 import com.example.tiendasuplementacion.screen.PaymentConfigScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
@@ -175,22 +174,10 @@ fun AppNavGraph(
                         navController = navController,
                         paymentViewModel = paymentViewModel,
                         onPaymentSelected = { payment ->
-                            if (payment.method == "PSE") {
-                                navController.navigate("psePayment") {
-                                    launchSingleTop = true
-                                }
-                            } else {
-                                navController.navigate("orderConfirmation/${payment.id}") {
-                                    launchSingleTop = true
-                                }
+                            navController.navigate("orderConfirmation/${payment.id}") {
+                                launchSingleTop = true
                             }
                         }
-                    )
-                }
-                composable("psePayment") {
-                    PSEPaymentScreen(
-                        navController = navController,
-                        cartViewModel = cartViewModel
                     )
                 }
                 composable(
