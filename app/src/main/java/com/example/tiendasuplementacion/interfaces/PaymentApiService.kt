@@ -22,4 +22,7 @@ interface PaymentApiService {
 
     @DELETE("api/payments/{id}")
     suspend fun delete(@Path("id") id: Long)
+
+    @POST("/api/additional-info-payments")
+    suspend fun savePaymentDetail(@Body paymentDetail: PaymentDetail): PaymentDetail
 }

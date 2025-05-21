@@ -83,4 +83,49 @@ class PaymentViewModel : ViewModel() {
     fun getPaymentById(paymentId: Long): Payment? {
         return payments.value?.find { it.id == paymentId }
     }
+
+    suspend fun savePaymentDetail(paymentDetail: PaymentDetail): Boolean {
+        Log.d("PaymentViewModel", "Attempting to save payment detail: $paymentDetail")
+        Log.d("PaymentViewModel", "Payment ID: ${paymentDetail.payment_id}")
+        Log.d("PaymentViewModel", "User ID: ${paymentDetail.user_id}")
+        Log.d("PaymentViewModel", "Card details: ${paymentDetail.cardNumber}, ${paymentDetail.expirationDate}, ${paymentDetail.cvc}")
+        Log.d("PaymentViewModel", "Address details: ${paymentDetail.country}, ${paymentDetail.addressLine1}, ${paymentDetail.city}")
+        
+        return try {
+            _isLoading.value = true
+            _error.value = null
+            val savedPaymentDetail = repository.savePaymentDetail(paymentDetail)
+            Log.d("PaymentViewModel", "Successfully saved payment detail. Response: $savedPaymentDetail")
+            val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
+            currentList.add(savedPaymentDetail)
+            _paymentDetails.value = currentList
+            true
+        } catch (e: Exception) {
+            Log.e("PaymentViewModel", "Error saving payment detail", e)
+            _error.value = e.message ?: "Error al guardar los detalles del método de pago"
+            false
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
+    fun savePaymentDetailAndNavigate(paymentDetail: PaymentDetail, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                val savedPaymentDetail = repository.savePaymentDetail(paymentDetail)
+                Log.d("PaymentViewModel", "Successfully saved payment detail. Response: $savedPaymentDetail")
+                val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
+                currentList.add(savedPaymentDetail)
+                _paymentDetails.value = currentList
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("PaymentViewModel", "Error saving payment detail", e)
+                _error.value = e.message ?: "Error al guardar los detalles del método de pago"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

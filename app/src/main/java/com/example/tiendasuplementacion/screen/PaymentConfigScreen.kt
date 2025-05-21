@@ -42,6 +42,8 @@ fun PaymentConfigScreen(
     var city by remember { mutableStateOf("") }
     var stateOrProvince by remember { mutableStateOf("") }
     var postalCode by remember { mutableStateOf("") }
+    var shouldSave by remember { mutableStateOf(false) }
+    var paymentToSave by remember { mutableStateOf<PaymentDetail?>(null) }
     
     val currentUser by authViewModel.currentUser.collectAsState()
     val scrollState = rememberScrollState()
@@ -52,6 +54,17 @@ fun PaymentConfigScreen(
     
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
+    }
+
+    LaunchedEffect(shouldSave) {
+        if (shouldSave && paymentToSave != null) {
+            val success = viewModel.savePaymentDetail(paymentToSave!!)
+            if (success) {
+                navController.navigateUp()
+            }
+            shouldSave = false
+            paymentToSave = null
+        }
     }
 
     Box(
@@ -330,8 +343,31 @@ fun PaymentConfigScreen(
                         return@Button
                     }
 
-                    // Por ahora solo navegamos de vuelta
-                    navController.navigateUp()
+                    currentUser?.id?.let { userId ->
+                        val paymentDetail = PaymentDetail(
+                            id = 0,
+                            payment = selectedPayment!!,
+                            payment_id = selectedPaymentId!!,
+                            user = currentUser!!,
+                            user_id = userId,
+                            cardNumber = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cardNumber else null,
+                            expirationDate = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) expirationDate else null,
+                            cvc = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cvc else null,
+                            cardholderName = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cardholderName else null,
+                            country = country,
+                            addressLine1 = addressLine1,
+                            addressLine2 = addressLine2.ifBlank { null },
+                            city = city,
+                            stateOrProvince = stateOrProvince,
+                            postalCode = postalCode
+                        )
+                        
+                        paymentToSave = paymentDetail
+                        shouldSave = true
+                    } ?: run {
+                        errorMessage = "Error: Usuario no encontrado"
+                        showError = true
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
