@@ -57,6 +57,26 @@ class PaymentViewModel : ViewModel() {
         }
     }
 
+    fun update(id: Long, payment: Payment) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                val updatedPayment = repository.update(id, payment)
+                val currentList = _payments.value?.toMutableList() ?: mutableListOf()
+                val index = currentList.indexOfFirst { it.id == id }
+                if (index != -1) {
+                    currentList[index] = updatedPayment
+                    _payments.value = currentList
+                }
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Error al actualizar el método de pago"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun fetchPaymentDetails(userId: Long) {
         Log.d("PaymentViewModel", "Fetching payment details for user: $userId")
         viewModelScope.launch {
@@ -148,7 +168,6 @@ class PaymentViewModel : ViewModel() {
                     _error.value = null
                     repository.deletePaymentDetail(paymentDetailId)
                     Log.d("PaymentViewModel", "Successfully deleted payment detail: $paymentDetailId")
-                    // No necesitamos actualizar la UI aquí porque ya lo hicimos optimistamente
                 } catch (e: Exception) {
                     // Si la eliminación falla, revertimos al estado anterior
                     Log.e("PaymentViewModel", "Error deleting payment detail", e)

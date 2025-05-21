@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -37,7 +38,9 @@ fun AdminPaymentsScreen(
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var showAddPaymentDialog by remember { mutableStateOf(false) }
+    var showEditPaymentDialog by remember { mutableStateOf(false) }
     var newPaymentName by remember { mutableStateOf("") }
+    var selectedPayment by remember { mutableStateOf<Payment?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
@@ -126,6 +129,19 @@ fun AdminPaymentsScreen(
                                         color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                                     )
                                 }
+                                IconButton(
+                                    onClick = {
+                                        selectedPayment = payment
+                                        newPaymentName = payment.name
+                                        showEditPaymentDialog = true
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Editar método de pago",
+                                        tint = Color(0xFFF6E7DF)
+                                    )
+                                }
                             }
                         }
                     }
@@ -205,6 +221,68 @@ fun AdminPaymentsScreen(
                         onClick = {
                             showAddPaymentDialog = false
                             newPaymentName = ""
+                        }
+                    ) {
+                        Text("Cancelar", color = Color(0xFFF6E7DF))
+                    }
+                },
+                containerColor = Color(0xFF26272B),
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        if (showEditPaymentDialog) {
+            AlertDialog(
+                onDismissRequest = { 
+                    showEditPaymentDialog = false
+                    newPaymentName = ""
+                    selectedPayment = null
+                },
+                title = {
+                    Text(
+                        "Editar Método de Pago",
+                        color = Color(0xFFF6E7DF)
+                    )
+                },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = newPaymentName,
+                            onValueChange = { newPaymentName = it },
+                            label = { Text("Nombre del método de pago") },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFFF6E7DF),
+                                unfocusedTextColor = Color(0xFFF6E7DF),
+                                focusedBorderColor = Color(0xFFF6E7DF),
+                                unfocusedBorderColor = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                focusedLabelColor = Color(0xFFF6E7DF),
+                                unfocusedLabelColor = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                                cursorColor = Color(0xFFF6E7DF)
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (newPaymentName.isNotBlank() && selectedPayment != null) {
+                                viewModel.update(selectedPayment!!.id, selectedPayment!!.copy(name = newPaymentName))
+                                showEditPaymentDialog = false
+                                newPaymentName = ""
+                                selectedPayment = null
+                            }
+                        }
+                    ) {
+                        Text("Guardar", color = Color(0xFFF6E7DF))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showEditPaymentDialog = false
+                            newPaymentName = ""
+                            selectedPayment = null
                         }
                     ) {
                         Text("Cancelar", color = Color(0xFFF6E7DF))
