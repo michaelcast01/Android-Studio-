@@ -35,16 +35,16 @@ fun PaymentSelectionScreen(
     navController: NavController,
     paymentViewModel: PaymentViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
-    onPaymentSelected: (Payment) -> Unit
+    onPaymentSelected: (PaymentDetail) -> Unit
 ) {
-    val currentUser by authViewModel.currentUser.collectAsState()
-    val paymentDetails = paymentViewModel.paymentDetails.observeAsState(initial = emptyList()).value
-    val isLoading by paymentViewModel.isLoading.observeAsState(initial = false)
+    val paymentDetails by paymentViewModel.paymentDetails.observeAsState(emptyList())
+    val isLoading by paymentViewModel.isLoading.observeAsState(false)
     val error by paymentViewModel.error.observeAsState()
+    val currentUser by authViewModel.currentUser.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentUser?.id) {
         currentUser?.id?.let { userId ->
             paymentViewModel.fetchPaymentDetails(userId)
         }
@@ -78,7 +78,9 @@ fun PaymentSelectionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { navController.navigateUp() }) {
+                IconButton(
+                    onClick = { navController.navigateUp() }
+                ) {
                     Icon(
                         Icons.Default.ArrowBack,
                         contentDescription = "Volver",
@@ -87,9 +89,9 @@ fun PaymentSelectionScreen(
                 }
                 Text(
                     text = "Seleccionar Método de Pago",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = Color(0xFFF6E7DF),
-                    modifier = Modifier.padding(start = 8.dp)
+                    modifier = Modifier.padding(start = 16.dp)
                 )
             }
 
@@ -100,9 +102,7 @@ fun PaymentSelectionScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(
-                        color = Color(0xFFF6E7DF)
-                    )
+                    CircularProgressIndicator(color = Color(0xFFF6E7DF))
                 }
             } else if (paymentDetails.isEmpty()) {
                 Box(
@@ -111,19 +111,17 @@ fun PaymentSelectionScreen(
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "No tienes métodos de pago configurados",
+                            text = "No hay métodos de pago configurados",
                             color = Color(0xFFF6E7DF),
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { navController.navigate("payment_config") },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF6E7DF),
-                                contentColor = Color(0xFF23242A)
+                                containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
                             Text("Agregar Método de Pago")
@@ -139,7 +137,7 @@ fun PaymentSelectionScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onPaymentSelected(paymentDetail.payment) },
+                                .clickable { onPaymentSelected(paymentDetail) },
                             colors = CardDefaults.cardColors(
                                 containerColor = Color(0xFF26272B)
                             ),
@@ -179,53 +177,27 @@ fun PaymentSelectionScreen(
                                         }
                                     }
                                 }
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                if (paymentDetail.cardholderName != null) {
-                                    Text(
-                                        text = paymentDetail.cardholderName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
-                                    )
-                                }
-                                
-                                if (paymentDetail.expirationDate != null) {
-                                    Text(
-                                        text = "Vence: ${paymentDetail.expirationDate}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.5f)
-                                    )
-                                }
-                                
-                                Spacer(modifier = Modifier.height(8.dp))
-                                
-                                Text(
-                                    text = "${paymentDetail.addressLine1}, ${paymentDetail.city}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFF6E7DF).copy(alpha = 0.5f)
-                                )
-                                Text(
-                                    text = "${paymentDetail.stateOrProvince}, ${paymentDetail.country} ${paymentDetail.postalCode}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFF6E7DF).copy(alpha = 0.5f)
-                                )
                             }
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(
                     onClick = { navController.navigate("payment_config") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF6E7DF),
-                        contentColor = Color(0xFF23242A)
+                        containerColor = MaterialTheme.colorScheme.primary
                     ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
+                    Icon(
+                        Icons.Default.Payment,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Agregar Nuevo Método de Pago")
                 }
             }
@@ -234,13 +206,13 @@ fun PaymentSelectionScreen(
         if (showNetworkError) {
             NetworkErrorBanner(
                 message = networkErrorMessage,
+                onDismiss = { showNetworkError = false },
                 onRetry = {
                     showNetworkError = false
                     currentUser?.id?.let { userId ->
                         paymentViewModel.fetchPaymentDetails(userId)
                     }
-                },
-                onDismiss = { showNetworkError = false }
+                }
             )
         }
     }

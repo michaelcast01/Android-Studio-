@@ -22,16 +22,21 @@ import com.example.tiendasuplementacion.model.Order
 import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
 import com.example.tiendasuplementacion.model.OrderProductDetail
+import com.example.tiendasuplementacion.model.PaymentDetail
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderConfirmationScreen(
     navController: NavController,
     cartViewModel: CartViewModel,
-    selectedPayment: Payment,
+    selectedPaymentDetail: PaymentDetail,
     authViewModel: AuthViewModel = viewModel(),
     orderViewModel: OrderViewModel = viewModel(),
     orderProductViewModel: OrderProductViewModel = viewModel()
@@ -60,22 +65,54 @@ fun OrderConfirmationScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Payment,
+                        contentDescription = "Método de Pago",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Método de Pago",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Método de Pago",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = selectedPaymentDetail.payment.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Text(
-                    text = selectedPayment.name,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                selectedPaymentDetail.payment.method?.let { method ->
+                    Text(
+                        text = method,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+                if (selectedPaymentDetail.cardNumber != null) {
+                    Text(
+                        text = "•••• " + selectedPaymentDetail.cardNumber.takeLast(4),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
 
@@ -170,7 +207,7 @@ fun OrderConfirmationScreen(
                             user_id = currentUser?.id ?: 0L,
                             status_id = 1L, // Estado inicial: pendiente
                             total_products = totalProducts,
-                            payment_id = selectedPayment.id
+                            payment_id = selectedPaymentDetail.id // Usar el ID del detalle del método de pago
                         )
                         
                         // Crear la orden en el backend

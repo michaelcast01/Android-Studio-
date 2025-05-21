@@ -44,6 +44,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.livedata.observeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,24 +175,34 @@ fun AppNavGraph(
                     PaymentSelectionScreen(
                         navController = navController,
                         paymentViewModel = paymentViewModel,
-                        onPaymentSelected = { payment ->
-                            navController.navigate("orderConfirmation/${payment.id}") {
+                        onPaymentSelected = { paymentDetail ->
+                            navController.navigate("orderConfirmation/${paymentDetail.id}") {
                                 launchSingleTop = true
                             }
                         }
                     )
                 }
                 composable(
-                    route = "orderConfirmation/{paymentId}",
-                    arguments = listOf(navArgument("paymentId") { type = NavType.LongType })
+                    route = "orderConfirmation/{paymentDetailId}",
+                    arguments = listOf(navArgument("paymentDetailId") { type = NavType.LongType })
                 ) { backStackEntry ->
-                    val paymentId = backStackEntry.arguments?.getLong("paymentId") ?: 0L
-                    val payment = paymentViewModel.getPaymentById(paymentId)
-                    if (payment != null) {
+                    val paymentDetailId = backStackEntry.arguments?.getLong("paymentDetailId") ?: 0L
+                    val currentUser by authViewModel.currentUser.collectAsState()
+                    
+                    LaunchedEffect(currentUser?.id) {
+                        currentUser?.id?.let { userId ->
+                            paymentViewModel.fetchPaymentDetails(userId)
+                        }
+                    }
+                    
+                    val paymentDetails by paymentViewModel.paymentDetails.observeAsState(emptyList())
+                    val selectedPaymentDetail = paymentDetails.find { it.id == paymentDetailId }
+                    
+                    if (selectedPaymentDetail != null) {
                         OrderConfirmationScreen(
                             navController = navController,
                             cartViewModel = cartViewModel,
-                            selectedPayment = payment,
+                            selectedPaymentDetail = selectedPaymentDetail,
                             authViewModel = authViewModel
                         )
                     }
