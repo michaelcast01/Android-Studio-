@@ -38,6 +38,7 @@ import com.example.tiendasuplementacion.screen.OrderScreen
 import com.example.tiendasuplementacion.screen.PaymentSelectionScreen
 import com.example.tiendasuplementacion.screen.OrderConfirmationScreen
 import com.example.tiendasuplementacion.screen.PSEPaymentScreen
+import com.example.tiendasuplementacion.screen.PaymentConfigScreen
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -208,6 +209,7 @@ fun AppNavGraph(
                     }
                 }
                 composable("productForm") { ProductFormScreen(navController) }
+                composable("payment_config") { PaymentConfigScreen(navController) }
                 composable("settings") { SettingsScreen(navController, authViewModel = authViewModel) }
                 composable(
                     route = "editProduct/{productId}",

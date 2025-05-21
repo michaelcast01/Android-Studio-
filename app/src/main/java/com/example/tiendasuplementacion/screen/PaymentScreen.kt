@@ -197,6 +197,23 @@ fun PaymentScreen(
             }
         }
 
+        // Agregar FloatingActionButton
+        FloatingActionButton(
+            onClick = {
+                navController.navigate("payment_config")
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = Color(0xFFF6E7DF),
+            contentColor = Color(0xFF23242A)
+        ) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Agregar método de pago"
+            )
+        }
+
         if (showNetworkError) {
             NetworkErrorBanner(
                 message = networkErrorMessage,
