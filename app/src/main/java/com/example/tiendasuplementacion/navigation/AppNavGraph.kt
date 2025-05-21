@@ -61,8 +61,6 @@ fun AppNavGraph(
     val items = if (currentUser?.role_id == 2L) {
         listOf(
             NavBarItem("products", "Productos", Icons.Default.Store),
-            NavBarItem("payments", "Pagos", Icons.Default.Payment),
-            NavBarItem("orders", "Historial", Icons.Default.List),
             NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
         )
     } else {
