@@ -204,25 +204,41 @@ fun LoginScreen(
                         OutlinedTextField(
                             value = phone,
                             onValueChange = { phone = it },
-                            label = { Text("Teléfono") },
+                            label = { Text("Teléfono", color = Color(0xFFF6E7DF)) },
                             leadingIcon = {
-                                Icon(Icons.Default.Phone, contentDescription = null)
+                                Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFFF6E7DF))
                             },
                             modifier = Modifier.weight(1f),
                             enabled = !isLoading,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFF26272B),
+                                unfocusedContainerColor = Color(0xFF26272B),
+                                focusedTextColor = Color(0xFFF6E7DF),
+                                unfocusedTextColor = Color(0xFFF6E7DF),
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                            )
                         )
                         
                         OutlinedTextField(
                             value = city,
                             onValueChange = { city = it },
-                            label = { Text("Ciudad") },
+                            label = { Text("Ciudad", color = Color(0xFFF6E7DF)) },
                             leadingIcon = {
-                                Icon(Icons.Default.LocationCity, contentDescription = null)
+                                Icon(Icons.Default.LocationCity, contentDescription = null, tint = Color(0xFFF6E7DF))
                             },
                             modifier = Modifier.weight(1f),
                             enabled = !isLoading,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFF26272B),
+                                unfocusedContainerColor = Color(0xFF26272B),
+                                focusedTextColor = Color(0xFFF6E7DF),
+                                unfocusedTextColor = Color(0xFFF6E7DF),
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                            )
                         )
                     }
 
@@ -231,13 +247,21 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = address,
                         onValueChange = { address = it },
-                        label = { Text("Dirección") },
+                        label = { Text("Dirección", color = Color(0xFFF6E7DF)) },
                         leadingIcon = {
-                            Icon(Icons.Default.Home, contentDescription = null)
+                            Icon(Icons.Default.Home, contentDescription = null, tint = Color(0xFFF6E7DF))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF26272B),
+                            unfocusedContainerColor = Color(0xFF26272B),
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                        )
                     )
                 }
 
@@ -309,7 +333,10 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text(if (isRegistering) "Registrar" else "Ingresar")
+                        Text(
+                            if (isRegistering) "Registrar" else "Ingresar",
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
 
@@ -320,7 +347,8 @@ fun LoginScreen(
                 ) {
                     Text(
                         if (isRegistering) "¿Ya tienes una cuenta? Inicia sesión" 
-                        else "¿No tienes una cuenta? Regístrate"
+                        else "¿No tienes una cuenta? Regístrate",
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
