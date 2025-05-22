@@ -180,8 +180,7 @@ fun PaymentConfigScreen(
                         unfocusedLabelColor = Color(0xFFF6E7DF),
                         focusedLabelColor = Color(0xFFF6E7DF),
                         unfocusedTextColor = Color(0xFFF6E7DF),
-                        focusedTextColor = Color(0xFFF6E7DF),
-                        cursorColor = Color(0xFFF6E7DF)
+                        focusedTextColor = Color(0xFFF6E7DF)
                     )
                 )
 
@@ -194,7 +193,7 @@ fun PaymentConfigScreen(
                     OutlinedTextField(
                         value = expirationDate,
                         onValueChange = { expirationDate = it },
-                        label = { Text("Fecha Exp.", color = Color(0xFFF6E7DF)) },
+                        label = { Text("Fecha de Vencimiento", color = Color(0xFFF6E7DF)) },
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp),
@@ -204,8 +203,7 @@ fun PaymentConfigScreen(
                             unfocusedLabelColor = Color(0xFFF6E7DF),
                             focusedLabelColor = Color(0xFFF6E7DF),
                             unfocusedTextColor = Color(0xFFF6E7DF),
-                            focusedTextColor = Color(0xFFF6E7DF),
-                            cursorColor = Color(0xFFF6E7DF)
+                            focusedTextColor = Color(0xFFF6E7DF)
                         )
                     )
 
@@ -222,8 +220,7 @@ fun PaymentConfigScreen(
                             unfocusedLabelColor = Color(0xFFF6E7DF),
                             focusedLabelColor = Color(0xFFF6E7DF),
                             unfocusedTextColor = Color(0xFFF6E7DF),
-                            focusedTextColor = Color(0xFFF6E7DF),
-                            cursorColor = Color(0xFFF6E7DF)
+                            focusedTextColor = Color(0xFFF6E7DF)
                         )
                     )
                 }
@@ -233,14 +230,19 @@ fun PaymentConfigScreen(
                 OutlinedTextField(
                     value = cardholderName,
                     onValueChange = { cardholderName = it },
-                    label = { Text("Nombre del Titular", color = Color(0xFFF6E7DF)) },
+                    label = { Text("Nombre en la Tarjeta", color = Color(0xFFF6E7DF)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
+                        focusedBorderColor = Color(0xFFF6E7DF),
                         unfocusedLabelColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF)
+                        focusedLabelColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedTextColor = Color(0xFFF6E7DF)
                     )
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -261,8 +263,11 @@ fun PaymentConfigScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color(0xFFF6E7DF),
+                    focusedBorderColor = Color(0xFFF6E7DF),
                     unfocusedLabelColor = Color(0xFFF6E7DF),
-                    unfocusedTextColor = Color(0xFFF6E7DF)
+                    focusedLabelColor = Color(0xFFF6E7DF),
+                    unfocusedTextColor = Color(0xFFF6E7DF),
+                    focusedTextColor = Color(0xFFF6E7DF)
                 )
             )
 
@@ -275,8 +280,11 @@ fun PaymentConfigScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color(0xFFF6E7DF),
+                    focusedBorderColor = Color(0xFFF6E7DF),
                     unfocusedLabelColor = Color(0xFFF6E7DF),
-                    unfocusedTextColor = Color(0xFFF6E7DF)
+                    focusedLabelColor = Color(0xFFF6E7DF),
+                    unfocusedTextColor = Color(0xFFF6E7DF),
+                    focusedTextColor = Color(0xFFF6E7DF)
                 )
             )
 
@@ -289,8 +297,11 @@ fun PaymentConfigScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color(0xFFF6E7DF),
+                    focusedBorderColor = Color(0xFFF6E7DF),
                     unfocusedLabelColor = Color(0xFFF6E7DF),
-                    unfocusedTextColor = Color(0xFFF6E7DF)
+                    focusedLabelColor = Color(0xFFF6E7DF),
+                    unfocusedTextColor = Color(0xFFF6E7DF),
+                    focusedTextColor = Color(0xFFF6E7DF)
                 )
             )
 
@@ -303,8 +314,11 @@ fun PaymentConfigScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedBorderColor = Color(0xFFF6E7DF),
+                    focusedBorderColor = Color(0xFFF6E7DF),
                     unfocusedLabelColor = Color(0xFFF6E7DF),
-                    unfocusedTextColor = Color(0xFFF6E7DF)
+                    focusedLabelColor = Color(0xFFF6E7DF),
+                    unfocusedTextColor = Color(0xFFF6E7DF),
+                    focusedTextColor = Color(0xFFF6E7DF)
                 )
             )
 
@@ -323,8 +337,11 @@ fun PaymentConfigScreen(
                         .padding(end = 8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
+                        focusedBorderColor = Color(0xFFF6E7DF),
                         unfocusedLabelColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF)
+                        focusedLabelColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedTextColor = Color(0xFFF6E7DF)
                     )
                 )
 
@@ -337,8 +354,11 @@ fun PaymentConfigScreen(
                         .padding(start = 8.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
+                        focusedBorderColor = Color(0xFFF6E7DF),
                         unfocusedLabelColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF)
+                        focusedLabelColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedTextColor = Color(0xFFF6E7DF)
                     )
                 )
             }

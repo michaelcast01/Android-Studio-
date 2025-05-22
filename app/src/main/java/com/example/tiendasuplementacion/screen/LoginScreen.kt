@@ -293,9 +293,9 @@ fun LoginScreen(
                             if (isRegistering) {
                                 val setting = Setting(
                                     id = 0,
-                                    payment_id = 1, // ID por defecto para el método de pago
-                                    name = username, // Usamos el nombre de usuario como nombre
-                                    nickname = "", // Omitido
+                                    payment_id = 1,
+                                    name = username,
+                                    nickname = "",
                                     phone = phone.toLongOrNull() ?: 0L,
                                     city = city,
                                     address = address
@@ -306,7 +306,7 @@ fun LoginScreen(
                                     username = username,
                                     email = email,
                                     password = password,
-                                    role_id = 1L, // Cliente por defecto
+                                    role_id = 1L,
                                     setting_id = createdSetting.id
                                 )
                                 authViewModel.register(user)
@@ -320,6 +320,10 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4B5FD5),
+                        contentColor = Color.White
+                    ),
                     enabled = if (isRegistering) {
                         email.isNotBlank() && password.isNotBlank() && username.isNotBlank() &&
                         phone.isNotBlank() && city.isNotBlank() && address.isNotBlank() && isValidEmail(email)
@@ -330,12 +334,13 @@ fun LoginScreen(
                     if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = Color.White
                         )
                     } else {
                         Text(
-                            if (isRegistering) "Registrar" else "Ingresar",
-                            color = MaterialTheme.colorScheme.primary
+                            text = if (isRegistering) "Registrar" else "Ingresar",
+                            fontSize = 16.sp,
+                            color = Color.White
                         )
                     }
                 }
