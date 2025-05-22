@@ -112,26 +112,35 @@ fun PaymentConfigScreen(
             // Selector de método de pago
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { expanded = it }
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
                     value = payments.find { it.id == selectedPaymentId }?.name ?: "",
                     onValueChange = { },
                     label = { Text("Método de Pago", color = Color(0xFFF6E7DF)) },
                     readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    trailingIcon = { 
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
+                        .menuAnchor()
+                        .fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
+                        focusedBorderColor = Color(0xFFF6E7DF),
                         unfocusedLabelColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF)
+                        focusedLabelColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedTextColor = Color(0xFFF6E7DF)
                     )
                 )
-                ExposedDropdownMenu(
+                DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .exposedDropdownSize()
+                        .background(Color(0xFF23242A))
                 ) {
                     payments.forEach { payment ->
                         DropdownMenuItem(
@@ -144,7 +153,12 @@ fun PaymentConfigScreen(
                             onClick = { 
                                 selectedPaymentId = payment.id
                                 expanded = false
-                            }
+                            },
+                            colors = MenuDefaults.itemColors(
+                                textColor = Color(0xFFF6E7DF),
+                                leadingIconColor = Color(0xFFF6E7DF),
+                                trailingIconColor = Color(0xFFF6E7DF)
+                            )
                         )
                     }
                 }
@@ -162,8 +176,12 @@ fun PaymentConfigScreen(
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
+                        focusedBorderColor = Color(0xFFF6E7DF),
                         unfocusedLabelColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF)
+                        focusedLabelColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedTextColor = Color(0xFFF6E7DF),
+                        cursorColor = Color(0xFFF6E7DF)
                     )
                 )
 
@@ -182,8 +200,12 @@ fun PaymentConfigScreen(
                             .padding(end = 8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = Color(0xFFF6E7DF),
+                            focusedBorderColor = Color(0xFFF6E7DF),
                             unfocusedLabelColor = Color(0xFFF6E7DF),
-                            unfocusedTextColor = Color(0xFFF6E7DF)
+                            focusedLabelColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            cursorColor = Color(0xFFF6E7DF)
                         )
                     )
 
@@ -196,8 +218,12 @@ fun PaymentConfigScreen(
                             .padding(start = 8.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = Color(0xFFF6E7DF),
+                            focusedBorderColor = Color(0xFFF6E7DF),
                             unfocusedLabelColor = Color(0xFFF6E7DF),
-                            unfocusedTextColor = Color(0xFFF6E7DF)
+                            focusedLabelColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            cursorColor = Color(0xFFF6E7DF)
                         )
                     )
                 }
@@ -387,10 +413,18 @@ fun PaymentConfigScreen(
         if (showError) {
             AlertDialog(
                 onDismissRequest = { showError = false },
+                containerColor = Color(0xFF23242A),
+                titleContentColor = Color(0xFFF6E7DF),
+                textContentColor = Color(0xFFF6E7DF),
                 title = { Text("Error") },
                 text = { Text(errorMessage) },
                 confirmButton = {
-                    TextButton(onClick = { showError = false }) {
+                    TextButton(
+                        onClick = { showError = false },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFFF6E7DF)
+                        )
+                    ) {
                         Text("OK")
                     }
                 }

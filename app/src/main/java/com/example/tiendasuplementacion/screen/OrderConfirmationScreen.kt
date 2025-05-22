@@ -13,6 +13,7 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.model.Payment
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import coil.compose.rememberAsyncImagePainter
@@ -28,7 +29,9 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,11 +59,20 @@ fun OrderConfirmationScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF23242A),
+                        Color(0xFF23242A)
+                    )
+                )
+            )
             .padding(16.dp)
     ) {
         Text(
             text = "Confirmar Compra",
             style = MaterialTheme.typography.headlineMedium,
+            color = Color(0xFFF6E7DF),
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -69,7 +81,7 @@ fun OrderConfirmationScreen(
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = Color(0xFF2A2B31)
             )
         ) {
             Column(
@@ -84,7 +96,7 @@ fun OrderConfirmationScreen(
                     Icon(
                         imageVector = Icons.Default.Payment,
                         contentDescription = "Método de Pago",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color(0xFFF6E7DF),
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -92,37 +104,37 @@ fun OrderConfirmationScreen(
                         text = "Método de Pago",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = Color(0xFFF6E7DF)
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = selectedPaymentDetail.payment.name,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = Color(0xFFF6E7DF)
                 )
                 selectedPaymentDetail.payment.method?.let { method ->
                     Text(
                         text = method,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                 }
                 if (selectedPaymentDetail.cardNumber != null) {
                     Text(
                         text = "•••• " + selectedPaymentDetail.cardNumber.takeLast(4),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Vence: ${selectedPaymentDetail.expirationDate}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
                     )
                     Text(
                         text = "Titular: ${selectedPaymentDetail.cardholderName}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
                     )
                 }
                 
@@ -132,7 +144,7 @@ fun OrderConfirmationScreen(
                 Text(
                     text = "Dirección de facturación:",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = Color(0xFFF6E7DF),
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -143,17 +155,17 @@ fun OrderConfirmationScreen(
                         }
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                 )
                 Text(
                     text = "${selectedPaymentDetail.city}, ${selectedPaymentDetail.stateOrProvince}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                 )
                 Text(
                     text = "${selectedPaymentDetail.country} ${selectedPaymentDetail.postalCode}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                 )
             }
         }
@@ -161,6 +173,7 @@ fun OrderConfirmationScreen(
         Text(
             text = "Productos",
             style = MaterialTheme.typography.titleLarge,
+            color = Color(0xFFF6E7DF),
             modifier = Modifier.padding(vertical = 16.dp)
         )
 
@@ -171,7 +184,10 @@ fun OrderConfirmationScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF2A2B31)
+                    )
                 ) {
                     Row(
                         modifier = Modifier
@@ -190,15 +206,18 @@ fun OrderConfirmationScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = item.product.name,
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFFF6E7DF)
                             )
                             Text(
                                 text = "Cantidad: ${item.quantity}",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                             )
                             Text(
                                 text = "Precio: $${item.product.price * item.quantity}",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFF6E7DF)
                             )
                         }
                     }
@@ -209,7 +228,10 @@ fun OrderConfirmationScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF2A2B31)
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -220,7 +242,7 @@ fun OrderConfirmationScreen(
                     text = "Resumen de la Orden",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -232,12 +254,12 @@ fun OrderConfirmationScreen(
                     Text(
                         text = "Subtotal:",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                     Text(
                         text = "$${String.format("%.2f", total)}",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color(0xFFF6E7DF)
                     )
                 }
                 
@@ -250,17 +272,17 @@ fun OrderConfirmationScreen(
                     Text(
                         text = "Cantidad de productos:",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                     Text(
                         text = "$totalProducts",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color(0xFFF6E7DF)
                     )
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
-                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                Divider(color = Color(0xFFF6E7DF).copy(alpha = 0.12f))
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Row(
@@ -271,13 +293,13 @@ fun OrderConfirmationScreen(
                         text = "Total a pagar:",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFFF6E7DF)
                     )
                     Text(
                         text = "$${String.format("%.2f", total)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFFF6E7DF)
                     )
                 }
                 
@@ -287,7 +309,7 @@ fun OrderConfirmationScreen(
                 Text(
                     text = "La orden será procesada usando ${selectedPaymentDetail.payment.name}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -296,7 +318,7 @@ fun OrderConfirmationScreen(
                     Text(
                         text = "Terminación de tarjeta: •••• ${selectedPaymentDetail.cardNumber.takeLast(4)}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = Color(0xFFF6E7DF).copy(alpha = 0.6f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -350,17 +372,26 @@ fun OrderConfirmationScreen(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFF6E7DF),
+                contentColor = Color(0xFF23242A)
+            ),
             shape = RoundedCornerShape(16.dp),
             enabled = !isLoading
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = Color(0xFF23242A)
                 )
             } else {
-                Text("Confirmar Compra")
+                Text(
+                    "Confirmar Compra",
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
@@ -369,7 +400,13 @@ fun OrderConfirmationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFFF6E7DF)
+            ),
+            border = ButtonDefaults.outlinedButtonBorder.copy(
+                brush = SolidColor(Color(0xFFF6E7DF))
+            )
         ) {
             Text("Cancelar")
         }
@@ -378,11 +415,17 @@ fun OrderConfirmationScreen(
     if (showError) {
         AlertDialog(
             onDismissRequest = { showError = false },
+            containerColor = Color(0xFF23242A),
+            titleContentColor = Color(0xFFF6E7DF),
+            textContentColor = Color(0xFFF6E7DF),
             title = { Text("Error") },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(
-                    onClick = { showError = false }
+                    onClick = { showError = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFF6E7DF)
+                    )
                 ) {
                     Text("OK")
                 }
@@ -399,11 +442,14 @@ fun OrderConfirmationScreen(
                     popUpTo("cart") { inclusive = true }
                 }
             },
+            containerColor = Color(0xFF23242A),
+            iconContentColor = Color(0xFFF6E7DF),
+            titleContentColor = Color(0xFFF6E7DF),
+            textContentColor = Color(0xFFF6E7DF),
             icon = {
                 Icon(
                     imageVector = Icons.Default.Payment,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    contentDescription = null
                 )
             },
             title = { Text("¡Compra Exitosa!") },
@@ -430,7 +476,10 @@ fun OrderConfirmationScreen(
                             launchSingleTop = true
                             popUpTo("cart") { inclusive = true }
                         }
-                    }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFF6E7DF)
+                    )
                 ) {
                     Text("Continuar")
                 }
