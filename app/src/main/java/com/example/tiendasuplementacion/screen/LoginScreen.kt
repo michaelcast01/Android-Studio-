@@ -1,9 +1,11 @@
 package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,13 +14,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.tiendasuplementacion.R
 import com.example.tiendasuplementacion.model.Role
 import com.example.tiendasuplementacion.model.Setting
 import com.example.tiendasuplementacion.model.User
@@ -96,15 +101,16 @@ fun LoginScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp)
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "Logo",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (isRegistering) "Registro" else "Iniciar Sesión",
+                    text = if (isRegistering) "Registro" else "DiamondSuplements",
                     style = MaterialTheme.typography.titleLarge,
                     color = Color(0xFFF6E7DF)
                 )
