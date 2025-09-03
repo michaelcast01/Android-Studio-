@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.interfaces
 
-
 import com.example.tiendasuplementacion.model.CategoryProduct
 import retrofit2.http.*
 

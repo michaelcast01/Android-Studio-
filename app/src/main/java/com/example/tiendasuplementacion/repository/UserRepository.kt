@@ -1,7 +1,6 @@
 package com.example.tiendasuplementacion.repository
 
 import com.example.tiendasuplementacion.model.User
-import com.example.tiendasuplementacion.model.LoginResponse
 import com.example.tiendasuplementacion.network.RetrofitClient
 
 class UserRepository {

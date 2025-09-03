@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,14 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import coil.compose.AsyncImage
 import com.example.tiendasuplementacion.model.UserOrder
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.res.painterResource
-import com.example.tiendasuplementacion.R
-import com.example.tiendasuplementacion.util.QRCodeGenerator
-import com.google.gson.Gson
 import android.content.Context
-import android.net.Uri
-import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.FileProvider
 import com.example.tiendasuplementacion.util.PdfGenerator
 import java.io.File

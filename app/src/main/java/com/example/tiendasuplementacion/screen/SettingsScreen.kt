@@ -13,7 +13,6 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.SettingViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
-import com.example.tiendasuplementacion.model.Payment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 

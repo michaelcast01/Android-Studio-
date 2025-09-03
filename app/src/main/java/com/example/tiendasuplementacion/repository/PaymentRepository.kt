@@ -6,7 +6,6 @@ import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.network.RetrofitClient
 import retrofit2.HttpException
 import java.io.IOException
-import kotlin.jvm.Throws
 
 class PaymentRepository {
     private val service = RetrofitClient.paymentService

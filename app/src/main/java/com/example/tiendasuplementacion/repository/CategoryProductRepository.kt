@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.repository
 
-
 import com.example.tiendasuplementacion.model.CategoryProduct
 import com.example.tiendasuplementacion.network.RetrofitClient
 

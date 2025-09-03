@@ -6,6 +6,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 
 object QRCodeGenerator {
     fun generateQRCode(content: String, width: Int = 512, height: Int = 512): Bitmap {
@@ -18,12 +20,12 @@ object QRCodeGenerator {
 
             val writer = QRCodeWriter()
             val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, width, height, hints)
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
 
             // Create QR Code with black modules on white background
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                    bitmap[x, y] = if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
                 }
             }
 
@@ -31,7 +33,7 @@ object QRCodeGenerator {
         } catch (e: Exception) {
             e.printStackTrace()
             // Return a simple error bitmap if QR generation fails
-            return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            return createBitmap(width, height).apply {
                 eraseColor(Color.WHITE)
             }
         }

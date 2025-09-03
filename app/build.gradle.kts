@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,11 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.tiendasuplementacion"
         minSdk = 24
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -64,20 +67,20 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.compose.foundation:foundation:1.4.3")
-    implementation("androidx.navigation:navigation-compose:2.7.3")
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("androidx.compose.material:material-icons-extended:1.4.3")
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.material.icons.extended)
     
     // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("androidx.datastore:datastore-preferences-core:1.0.0")
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
 
     // Retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
+    implementation(libs.logging.interceptor)
 
     // Gson for JSON parsing
     implementation(libs.gson)
@@ -90,12 +93,12 @@ dependencies {
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.navigation.compose.android)
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation(libs.core)
+    implementation(libs.zxing.android.embedded)
 
     // PDF Generation
-    implementation("com.itextpdf:itext7-core:7.2.5")
-    implementation("com.itextpdf:html2pdf:4.0.5")
+    implementation(libs.itext7.core)
+    implementation(libs.html2pdf)
 
     // Testing
     testImplementation(libs.junit)

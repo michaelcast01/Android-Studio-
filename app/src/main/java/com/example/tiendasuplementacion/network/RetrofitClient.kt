@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.network
 
-import android.util.Log
 import com.example.tiendasuplementacion.interfaces.*
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

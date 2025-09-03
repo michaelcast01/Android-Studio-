@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.model
 
-
 data class OrderDetail(
     val detail_order_id: Long = 0,
     val order_id: Long,

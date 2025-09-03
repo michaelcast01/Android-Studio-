@@ -1,7 +1,6 @@
 package com.example.tiendasuplementacion.repository
 
 import com.example.tiendasuplementacion.model.Setting
-import com.example.tiendasuplementacion.model.SettingDetail
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.network.RetrofitClient
 

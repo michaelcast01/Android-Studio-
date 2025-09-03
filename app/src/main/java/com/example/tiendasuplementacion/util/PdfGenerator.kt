@@ -1,8 +1,7 @@
 package com.example.tiendasuplementacion.util
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+
 import com.itextpdf.kernel.colors.DeviceRgb
 import com.itextpdf.kernel.geom.PageSize
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -11,12 +10,13 @@ import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.*
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
-import com.itextpdf.layout.properties.HorizontalAlignment
 import com.example.tiendasuplementacion.model.UserOrder
 import com.example.tiendasuplementacion.model.OrderProduct
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
+import com.itextpdf.kernel.font.PdfFontFactory
+import com.itextpdf.layout.borders.Border
 
 object PdfGenerator {
     fun generateInvoicePdf(context: Context, order: UserOrder): String {
@@ -40,6 +40,9 @@ object PdfGenerator {
             // Formato para moneda
             val currencyFormat = NumberFormat.getCurrencyInstance(Locale("es", "CO"))
 
+            // Crear la fuente en negrita
+            val boldFont = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD)
+
             // Encabezado
             val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(70f, 30f)))
                 .setWidth(UnitValue.createPercentValue(100f))
@@ -49,8 +52,8 @@ object PdfGenerator {
                 Cell().add(
                     Paragraph("Tienda Suplementación")
                         .setFontSize(24f)
-                        .setBold()
-                ).setBorder(null)
+                        .setFont(boldFont)
+                ).setBorder(Border.NO_BORDER)
             )
 
             // Información de la factura
@@ -58,7 +61,7 @@ object PdfGenerator {
                 Cell().add(
                     Paragraph("FACTURA")
                         .setFontSize(24f)
-                        .setBold()
+                        .setFont(boldFont)
                         .setTextAlignment(TextAlignment.RIGHT)
                 ).add(
                     Paragraph("No. ${order.order_id}")
@@ -68,7 +71,7 @@ object PdfGenerator {
                     Paragraph("Fecha: ${order.date_order}")
                         .setFontSize(12f)
                         .setTextAlignment(TextAlignment.RIGHT)
-                ).setBorder(null)
+                ).setBorder(Border.NO_BORDER)
             )
 
             document.add(headerTable)
@@ -84,9 +87,9 @@ object PdfGenerator {
                 clienteTable.addCell(
                     Cell().add(
                         Paragraph("INFORMACIÓN DEL CLIENTE")
-                            .setBold()
+                            .setFont(boldFont)
                             .setFontSize(14f)
-                    ).setBorder(null)
+                    ).setBorder(Border.NO_BORDER)
                 )
                 
                 val addressInfo = listOfNotNull(
@@ -112,7 +115,7 @@ object PdfGenerator {
             document.add(
                 Paragraph("Estado del pedido: ${order.status.name}")
                     .setFontSize(12f)
-                    .setBold()
+                    .setFont(boldFont)
             )
             document.add(Paragraph("").setHeight(10f))
 
@@ -125,7 +128,7 @@ object PdfGenerator {
                 table.addHeaderCell(
                     Cell().add(
                         Paragraph(header)
-                            .setBold()
+                            .setFont(boldFont)
                             .setTextAlignment(TextAlignment.CENTER)
                     ).setBackgroundColor(DeviceRgb(240, 240, 240))
                 )
@@ -167,12 +170,12 @@ object PdfGenerator {
             }
 
             // Totales
-            table.addCell(Cell(1, 3).add(Paragraph("Subtotal (sin IVA):").setBold()).setTextAlignment(TextAlignment.RIGHT))
-            table.addCell(Cell().add(Paragraph(currencyFormat.format(subtotalSinIva)).setBold()).setTextAlignment(TextAlignment.RIGHT))
-            table.addCell(Cell().add(Paragraph(currencyFormat.format(ivaTotal)).setBold()).setTextAlignment(TextAlignment.RIGHT))
+            table.addCell(Cell(1, 3).add(Paragraph("Subtotal (sin IVA):").setFont(boldFont)).setTextAlignment(TextAlignment.RIGHT))
+            table.addCell(Cell().add(Paragraph(currencyFormat.format(subtotalSinIva)).setFont(boldFont)).setTextAlignment(TextAlignment.RIGHT))
+            table.addCell(Cell().add(Paragraph(currencyFormat.format(ivaTotal)).setFont(boldFont)).setTextAlignment(TextAlignment.RIGHT))
 
-            table.addCell(Cell(1, 3).add(Paragraph("Total (IVA incluido):").setBold()).setTextAlignment(TextAlignment.RIGHT))
-            table.addCell(Cell(1, 2).add(Paragraph(currencyFormat.format(subtotalConIva)).setBold()).setTextAlignment(TextAlignment.RIGHT))
+            table.addCell(Cell(1, 3).add(Paragraph("Total (IVA incluido):").setFont(boldFont)).setTextAlignment(TextAlignment.RIGHT))
+            table.addCell(Cell(1, 2).add(Paragraph(currencyFormat.format(subtotalConIva)).setFont(boldFont)).setTextAlignment(TextAlignment.RIGHT))
 
             document.add(table)
 
@@ -180,7 +183,7 @@ object PdfGenerator {
             document.add(Paragraph("").setHeight(30f))
             document.add(
                 Paragraph("INFORMACIÓN ADICIONAL")
-                    .setBold()
+                    .setFont(boldFont)
                     .setFontSize(14f)
             )
             document.add(Paragraph("").setHeight(10f))
@@ -205,13 +208,15 @@ object PdfGenerator {
                 Paragraph("¡Gracias por tu compra!")
                     .setTextAlignment(TextAlignment.CENTER)
                     .setFontSize(14f)
-                    .setBold()
+                    .setFont(boldFont)
             )
+            // Crear la fuente en itálica
+            val italicFont = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_OBLIQUE)
             document.add(
                 Paragraph("www.tiendasuplementacion.com")
                     .setTextAlignment(TextAlignment.CENTER)
                     .setFontSize(10f)
-                    .setItalic()
+                    .setFont(italicFont)
             )
 
             document.close()

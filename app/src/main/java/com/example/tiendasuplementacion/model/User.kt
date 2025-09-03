@@ -1,6 +1,5 @@
 package com.example.tiendasuplementacion.model
 
-
 data class User(
     val id: Long = 0,
     val username: String,

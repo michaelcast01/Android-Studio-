@@ -19,9 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
-import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.model.PaymentDetail
-import com.example.tiendasuplementacion.model.PaymentMethods
 import androidx.compose.runtime.livedata.observeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)

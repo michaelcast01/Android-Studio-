@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
-import com.example.tiendasuplementacion.model.Payment
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,8 +23,6 @@ import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
 import com.example.tiendasuplementacion.model.OrderProductDetail
 import com.example.tiendasuplementacion.model.PaymentDetail
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payment
