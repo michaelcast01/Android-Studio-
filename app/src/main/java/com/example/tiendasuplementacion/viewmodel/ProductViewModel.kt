@@ -6,22 +6,38 @@ import com.example.tiendasuplementacion.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.asStateFlow
 
 class ProductViewModel : ViewModel() {
     private val repository = ProductRepository()
     private val _products = MutableLiveData<List<Product>>()
     val products: LiveData<List<Product>> = _products
 
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean> = _isLoading
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // New unified UI state
+    private val _uiState = MutableStateFlow<UiState<List<Product>>>(UiState.Loading)
+    val uiState: StateFlow<UiState<List<Product>>> = _uiState.asStateFlow()
+
     fun fetchProducts() {
         viewModelScope.launch {
+            _isLoading.value = true
+            _uiState.value = UiState.Loading
             try {
-                _products.value = repository.getAll()
+                val list = repository.getAll()
+                _products.value = list
                 _error.value = null
+                _uiState.value = UiState.Success(list)
             } catch (e: Exception) {
-                _error.value = "Error al cargar los productos: ${e.message}"
+                val msg = "Error al cargar los productos: ${e.message}"
+                _error.value = msg
+                _uiState.value = UiState.Error(msg)
+            } finally {
+                _isLoading.value = false
             }
         }
     }

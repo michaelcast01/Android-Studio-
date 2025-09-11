@@ -97,7 +97,8 @@ fun OrderFormScreen(
                             // Aquí iría la lógica para crear la orden
                             navController.navigateUp()
                         } catch (e: Exception) {
-                            errorMessage = e.message ?: "Error al crear la orden"
+                                android.util.Log.e("OrderFormScreen", "Error creando orden", e)
+                                errorMessage = "No se pudo crear la orden. Intenta de nuevo."
                             showError = true
                         } finally {
                             isLoading = false

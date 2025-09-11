@@ -7,6 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +39,8 @@ fun AdminClientsScreen(
     var selectedUser by remember { mutableStateOf<UserDetail?>(null) }
 
     LaunchedEffect(Unit) {
-        // Cargar usuarios con role_id = 1 (clientes)
-        userDetailViewModel.fetchUserDetailsByRole(1L)
+        // Cargar usuarios con role_id = 2 (clientes/usuarios)
+        userDetailViewModel.fetchUserDetailsByRole(2L)
     }
 
     LaunchedEffect(error) {
@@ -60,78 +63,140 @@ fun AdminClientsScreen(
             )
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Gestión de Clientes",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color(0xFFF6E7DF),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Gestión de Clientes",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color(0xFFF6E7DF),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
 
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFFF6E7DF))
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(userDetailsList) { userDetail ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = CardDefaults.cardElevation(4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF26272B)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            onClick = { selectedUser = userDetail }
-                        ) {
-                            Column(
+                // Búsqueda rápida por usuario o email
+                var query by remember { mutableStateOf("") }
+                // debounce state
+                val coroutineScope = rememberCoroutineScope()
+                var debouncedQuery by remember { mutableStateOf("") }
+                var debounceJob by remember { mutableStateOf<Job?>(null) }
+
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = {
+                        query = it
+                        // cancel previous job and start debounce
+                        debounceJob?.cancel()
+                        debounceJob = coroutineScope.launch {
+                            delay(300L)
+                            debouncedQuery = query
+                        }
+                    },
+                    placeholder = { Text("Buscar por usuario o email...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF26272B),
+                        unfocusedContainerColor = Color(0xFF26272B),
+                        focusedTextColor = Color(0xFFF6E7DF),
+                        unfocusedTextColor = Color(0xFFF6E7DF),
+                        focusedPlaceholderColor = Color(0xFFF6E7DF).copy(alpha = 0.6f),
+                        unfocusedPlaceholderColor = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                    )
+                )
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFF6E7DF))
+                    }
+                } else {
+                    // Filtrar la lista localmente para una respuesta instantánea
+                    val filtered = remember(userDetailsList, debouncedQuery) {
+                        if (debouncedQuery.isBlank()) userDetailsList
+                        else userDetailsList.filter { ud ->
+                            ud.username.contains(debouncedQuery, ignoreCase = true) || ud.email.contains(debouncedQuery, ignoreCase = true)
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filtered, key = { it.id }) { userDetail ->
+                            Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp)
+                                    .padding(vertical = 4.dp),
+                                elevation = CardDefaults.cardElevation(4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF26272B)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                onClick = { selectedUser = userDetail }
                             ) {
-                                Text(
-                                    text = userDetail.username,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color(0xFFF6E7DF),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = userDetail.email,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
-                                )
-                                userDetail.settings?.let { settings ->
-                                    Text(
-                                        text = "Teléfono: ${settings.phone}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
-                                    )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = userDetail.username,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = Color(0xFFF6E7DF),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = userDetail.email,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
+                                        )
+                                        userDetail.settings?.let { settings ->
+                                            Text(
+                                                text = "Tel: ${settings.phone}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+
+                                    // Contador rápido de pedidos
+                                    val ordersCount = userDetail.orders.size
+                                    Column(
+                                        horizontalAlignment = Alignment.End
+                                    ) {
+                                        Text(text = "Pedidos: $ordersCount", color = Color(0xFFF6E7DF))
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        // Botones rápidos: ver historial (dialog) y editar/ir a producto
+                                        Row {
+                                            TextButton(onClick = { selectedUser = userDetail }) {
+                                                Text("Ver historial")
+                                            }
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            TextButton(onClick = { navController.navigate("productForm") }) {
+                                                Text("Agregar producto")
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
         if (showNetworkError) {
             NetworkErrorBanner(
                 message = networkErrorMessage,
                 onRetry = {
                     showNetworkError = false
-                    userDetailViewModel.fetchUserDetailsByRole(1L)
+                    userDetailViewModel.fetchUserDetailsByRole(2L)
                 },
                 onDismiss = { showNetworkError = false }
             )

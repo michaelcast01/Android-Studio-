@@ -29,6 +29,7 @@ import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.viewmodel.RoleViewModel
 import com.example.tiendasuplementacion.viewmodel.SettingViewModel
+import com.example.tiendasuplementacion.viewmodel.ADMIN_ROLE
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -356,7 +357,7 @@ fun LoginScreen(
                     )
                 }
 
-                if (currentUser?.role_id == 2L) {
+                if (currentUser?.role_id == ADMIN_ROLE) {
                     // Mostrar botón de agregar producto
                 }
             }

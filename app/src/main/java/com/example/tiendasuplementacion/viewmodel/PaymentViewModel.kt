@@ -6,6 +6,9 @@ import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.repository.PaymentRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class PaymentViewModel : ViewModel() {
     private val repository = PaymentRepository()
@@ -14,6 +17,9 @@ class PaymentViewModel : ViewModel() {
 
     private val _paymentDetails = MutableLiveData<List<PaymentDetail>>()
     val paymentDetails: LiveData<List<PaymentDetail>> = _paymentDetails
+
+    private val _paymentDetailsUiState = MutableStateFlow<UiState<List<PaymentDetail>>>(UiState.Loading)
+    val paymentDetailsUiState: StateFlow<UiState<List<PaymentDetail>>> = _paymentDetailsUiState.asStateFlow()
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -83,13 +89,17 @@ class PaymentViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = null
+                _paymentDetailsUiState.value = UiState.Loading
                 val details = repository.getPaymentDetails(userId)
                 Log.d("PaymentViewModel", "Received payment details: $details")
                 _paymentDetails.value = details
+                _paymentDetailsUiState.value = UiState.Success(details)
             } catch (e: Exception) {
                 Log.e("PaymentViewModel", "Error fetching payment details", e)
-                _error.value = e.message ?: "Error al cargar los detalles de pago"
+                val msg = e.message ?: "Error al cargar los detalles de pago"
+                _error.value = msg
                 _paymentDetails.value = emptyList()
+                _paymentDetailsUiState.value = UiState.Error(msg)
             } finally {
                 _isLoading.value = false
             }
@@ -102,6 +112,19 @@ class PaymentViewModel : ViewModel() {
 
     fun getPaymentById(paymentId: Long): Payment? {
         return payments.value?.find { it.id == paymentId }
+    }
+
+    // A small in-memory cache to hold the last selected PaymentDetail so we can avoid
+    // re-fetching immediately after the user selects a payment method and we navigate.
+    private val _selectedPaymentDetail = MutableLiveData<PaymentDetail?>()
+    val selectedPaymentDetail: LiveData<PaymentDetail?> = _selectedPaymentDetail
+
+    fun setSelectedPaymentDetail(paymentDetail: PaymentDetail?) {
+        _selectedPaymentDetail.value = paymentDetail
+    }
+
+    fun clearSelectedPaymentDetail() {
+        _selectedPaymentDetail.value = null
     }
 
     suspend fun savePaymentDetail(paymentDetail: PaymentDetail): Boolean {
@@ -119,10 +142,12 @@ class PaymentViewModel : ViewModel() {
             val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
             currentList.add(savedPaymentDetail)
             _paymentDetails.value = currentList
+            _paymentDetailsUiState.value = UiState.Success(currentList)
             true
         } catch (e: Exception) {
             Log.e("PaymentViewModel", "Error saving payment detail", e)
             _error.value = e.message ?: "Error al guardar los detalles del método de pago"
+            _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar los detalles del método de pago")
             false
         } finally {
             _isLoading.value = false
@@ -139,10 +164,12 @@ class PaymentViewModel : ViewModel() {
                 val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
                 currentList.add(savedPaymentDetail)
                 _paymentDetails.value = currentList
+                    _paymentDetailsUiState.value = UiState.Success(currentList)
                 onSuccess()
             } catch (e: Exception) {
                 Log.e("PaymentViewModel", "Error saving payment detail", e)
                 _error.value = e.message ?: "Error al guardar los detalles del método de pago"
+                    _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar los detalles del método de pago")
             } finally {
                 _isLoading.value = false
             }

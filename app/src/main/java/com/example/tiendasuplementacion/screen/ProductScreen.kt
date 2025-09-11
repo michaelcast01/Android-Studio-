@@ -18,23 +18,33 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.compose.AsyncImagePainter
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.viewmodel.ProductViewModel
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.model.Product
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
+import com.example.tiendasuplementacion.viewmodel.ADMIN_ROLE
 import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import com.example.tiendasuplementacion.model.CategoryProduct
 import com.example.tiendasuplementacion.model.Category
 import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
 import androidx.compose.ui.res.painterResource
 import com.example.tiendasuplementacion.R
+import com.example.tiendasuplementacion.component.ShimmerPlaceholder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,8 +57,10 @@ fun ProductScreen(
     categoryViewModel: CategoryViewModel = viewModel()
 ) {
     val products by productViewModel.products.observeAsState(emptyList())
+    val isLoading by productViewModel.isLoading.observeAsState(false)
+    val productsUiState by productViewModel.uiState.collectAsState()
     val cartItems by cartViewModel.cartItems.collectAsState()
-    val cartItemCount = cartItems.sumOf { it.quantity }
+    val cartItemCount by remember { derivedStateOf { cartItems.sumOf { it.quantity } } }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -57,7 +69,7 @@ fun ProductScreen(
     val error by productViewModel.error.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
-    val isAdmin = currentUser?.role_id == 2L
+    val isAdmin by remember { derivedStateOf { currentUser?.role_id == ADMIN_ROLE } }
 
     LaunchedEffect(Unit) {
         productViewModel.fetchProducts()
@@ -71,20 +83,6 @@ fun ProductScreen(
             networkErrorMessage = error ?: ""
         }
     }
-
-    if (showError) {
-        AlertDialog(
-            onDismissRequest = { showError = false },
-            title = { Text("Error") },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                TextButton(onClick = { showError = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -109,31 +107,79 @@ fun ProductScreen(
                 color = Color(0xFFF6E7DF),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(8.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(products) { product ->
-                    ProductCard(
-                        product = product,
-                        onAddToCart = {
-                            try {
-                                cartViewModel.addToCart(it)
-                            } catch (e: Exception) {
-                                errorMessage = e.message ?: "Error al agregar al carrito"
-                                showError = true
+
+            when (productsUiState) {
+                is com.example.tiendasuplementacion.viewmodel.UiState.Loading -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(6) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF26272B))
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Box(modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(100.dp)
+                                        .background(Color(0xFF333438)))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Box(modifier = Modifier.fillMaxWidth(0.6f).height(18.dp).background(Color(0xFF333438)))
+                                }
                             }
-                        },
-                        categoryProducts = categoryProducts,
-                        categories = categories,
-                        isAdmin = isAdmin,
-                        navController = navController
-                    )
+                        }
+                    }
+                }
+                is com.example.tiendasuplementacion.viewmodel.UiState.Success -> {
+                    val list = (productsUiState as com.example.tiendasuplementacion.viewmodel.UiState.Success).data
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(list, key = { it.id }) { product ->
+                            ProductCard(
+                                product = product,
+                                onAddToCart = {
+                                    try {
+                                        cartViewModel.addToCart(it)
+                                    } catch (e: Exception) {
+                                        android.util.Log.e("ProductScreen", "Error agregando al carrito", e)
+                                        errorMessage = "No se pudo agregar el producto al carrito. Intenta de nuevo."
+                                        showError = true
+                                    }
+                                },
+                                categoryProducts = categoryProducts,
+                                categories = categories,
+                                isAdmin = isAdmin,
+                                navController = navController
+                            )
+                        }
+                    }
+                }
+                is com.example.tiendasuplementacion.viewmodel.UiState.Error -> {
+                    val msg = (productsUiState as com.example.tiendasuplementacion.viewmodel.UiState.Error).message
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = "Error cargando productos", color = Color(0xFFF6E7DF))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = msg, color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = { productViewModel.fetchProducts() }) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
                 }
             }
         }
-        AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != 2L) {
+    AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != ADMIN_ROLE) {
             FloatingActionButton(
                 onClick = { navController.navigate("cart") },
                 containerColor = Color(0xFFF6E7DF),
@@ -148,7 +194,7 @@ fun ProductScreen(
                 }
             }
         }
-        if (currentUser?.role_id == 2L) {
+    if (currentUser?.role_id == ADMIN_ROLE) {
             FloatingActionButton(
                 onClick = { navController.navigate("productForm") },
                 containerColor = Color(0xFFF6E7DF),
@@ -223,16 +269,30 @@ fun ProductCard(
                 Column(
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    AsyncImage(
-                        model = product.url_image,
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(product.url_image)
+                            .crossfade(true)
+                            .build(),
                         contentDescription = product.name,
-                        placeholder = painterResource(R.drawable.placeholder),
-                        error = painterResource(R.drawable.image_error),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        val state = painter.state
+                        when (state) {
+                            is AsyncImagePainter.State.Loading -> ShimmerPlaceholder(modifier = Modifier.fillMaxSize())
+                            is AsyncImagePainter.State.Error -> Image(
+                                painter = painterResource(R.drawable.placeholder),
+                                contentDescription = product.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            else -> SubcomposeAsyncImageContent()
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "ID: ${product.id}",
@@ -284,16 +344,30 @@ fun ProductCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            AsyncImage(
-                model = product.url_image,
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(product.url_image)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = product.name,
-                placeholder = painterResource(R.drawable.placeholder),
-                error = painterResource(R.drawable.image_error),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            ) {
+                val state = painter.state
+                when (state) {
+                    is AsyncImagePainter.State.Loading -> ShimmerPlaceholder(modifier = Modifier.fillMaxSize())
+                    is AsyncImagePainter.State.Error -> Image(
+                        painter = painterResource(R.drawable.placeholder),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    else -> SubcomposeAsyncImageContent()
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = product.name,
@@ -365,3 +439,5 @@ fun ProductCard(
         }
     }
 }
+
+// Reuse ShimmerPlaceholder from component package

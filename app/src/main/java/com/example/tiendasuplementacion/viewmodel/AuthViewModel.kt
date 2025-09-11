@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+const val ADMIN_ROLE = 1L
+
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = UserRepository()
     private val _isAuthenticated = MutableStateFlow<Boolean?>(null)
@@ -124,4 +126,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _error.value = null
         }
     }
+
+    // Helper para chequear si el usuario actual es administrador
+    fun isAdmin(): Boolean = _currentUser.value?.role_id == ADMIN_ROLE
 }

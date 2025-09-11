@@ -34,7 +34,8 @@ fun PaymentFormScreen(
 
     LaunchedEffect(error) {
         if (error != null) {
-            errorMessage = error ?: "Error al guardar el método de pago"
+            android.util.Log.e("PaymentFormScreen", "Error en PaymentViewModel: $error")
+            errorMessage = "No se pudo guardar el método de pago. Intenta nuevamente."
             showError = true
         }
     }
@@ -128,7 +129,8 @@ fun PaymentFormScreen(
                                 viewModel.createPayment(Payment(name = name, method = method))
                                 showSuccessDialog = true
                             } catch (e: Exception) {
-                                errorMessage = e.message ?: "Error al guardar el método de pago"
+                                android.util.Log.e("PaymentFormScreen", "Error guardando método de pago", e)
+                                errorMessage = "No se pudo guardar el método de pago. Intenta nuevamente."
                                 showError = true
                             }
                         }

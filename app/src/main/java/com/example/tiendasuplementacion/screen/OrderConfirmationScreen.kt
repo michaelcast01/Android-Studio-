@@ -24,6 +24,7 @@ import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
 import com.example.tiendasuplementacion.model.OrderProductDetail
 import com.example.tiendasuplementacion.model.PaymentDetail
 import kotlinx.coroutines.launch
+import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.ui.graphics.Brush
@@ -350,7 +351,8 @@ fun OrderConfirmationScreen(
                         showSuccess = true
                         
                     } catch (e: Exception) {
-                        errorMessage = e.message ?: "Error al crear la orden"
+                        Log.e("OrderConfirmation", "Error creando orden", e)
+                        errorMessage = "No se pudo procesar la orden. Por favor intenta nuevamente."
                         showError = true
                     } finally {
                         isLoading = false

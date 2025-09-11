@@ -21,7 +21,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.compose.AsyncImagePainter
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import com.example.tiendasuplementacion.R
+import com.example.tiendasuplementacion.component.ShimmerPlaceholder
 import com.example.tiendasuplementacion.model.UserOrder
 import androidx.compose.ui.draw.clip
 import android.content.Context
@@ -272,13 +280,29 @@ fun OrderScreen(
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            AsyncImage(
-                                model = product.url_image,
+                            SubcomposeAsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(product.url_image)
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = product.name,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                            )
+                            ) {
+                                val state = painter.state
+                                when (state) {
+                                    is AsyncImagePainter.State.Loading -> ShimmerPlaceholder(modifier = Modifier.fillMaxSize())
+                                    is AsyncImagePainter.State.Error -> {
+                                        Image(
+                                            painter = painterResource(R.drawable.placeholder),
+                                            contentDescription = product.name,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                    else -> SubcomposeAsyncImageContent()
+                                }
+                            }
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
