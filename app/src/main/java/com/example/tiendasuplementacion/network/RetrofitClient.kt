@@ -1,67 +1,61 @@
 package com.example.tiendasuplementacion.network
 
+import android.content.Context
+import com.example.tiendasuplementacion.BuildConfig
 import com.example.tiendasuplementacion.interfaces.*
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val TAG = "RetrofitClient"
 
-    // Configuración de la URL base
-    private const val BASE_URL = "http://10.0.2.2:8080/" // Asegúrate de que termine con /
-    private const val MAX_RETRIES = 3
-    private const val RETRY_DELAY_MS = 2000L // 2 segundos entre intentos
+    // Configuraci9n de la URL base (dev por defecto)
+    private const val BASE_URL = "http://10.0.2.2:8080/" // Asegrate de que termine con /
     private const val TIMEOUT_SECONDS = 30L // 30 segundos de timeout
+    private const val HTTP_CACHE_SIZE: Long = 10L * 1024L * 1024L // 10 MB
 
-    // Configuración del interceptor de logging
+    // Interceptor de logging, controlado por BuildConfig.LOGGING_ENABLED
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.LOGGING_ENABLED) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
     }
 
-    // Configuración del cliente OkHttp con reintentos y logs
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .addInterceptor(loggingInterceptor)
-        .addInterceptor { chain ->
-            var retryCount = 0
-            var lastException: Exception? = null
-            val request = chain.request()
-            while (retryCount < MAX_RETRIES) {
-                try {
-                    val response = chain.proceed(request)
-                    if (response.isSuccessful) {
-                        return@addInterceptor response
-                    } else {
-                        val errorBody = response.body?.string() ?: "Sin cuerpo de error"
-                        throw Exception("Error del servidor: ${response.code} - ${response.message}\n$errorBody")
-                    }
-                } catch (e: Exception) {
-                    lastException = e
-                    retryCount++
-                    if (retryCount < MAX_RETRIES) {
-                        Thread.sleep(RETRY_DELAY_MS)
-                    }
-                }
-            }
-            // En vez de lanzar excepción fatal, devuelve una respuesta falsa con código 599
-            val errorMessage = "No se pudo conectar al servidor después de $MAX_RETRIES intentos.\nURL: $BASE_URL\nÚltimo error: ${lastException?.message}\nVerifica que:\n1. El servidor backend esté en ejecución\n2. El puerto 8080 esté abierto y accesible\n3. No haya un firewall bloqueando la conexión\n4. Si usas el emulador de Android, la URL debe ser 10.0.2.2\n5. Si usas un dispositivo físico, usa la IP real de tu computadora"
-            return@addInterceptor okhttp3.Response.Builder()
-                .request(request)
-                .protocol(okhttp3.Protocol.HTTP_1_1)
-                .code(599)
-                .message(errorMessage)
-                .body(okhttp3.ResponseBody.create(null, errorMessage))
-                .build()
-        }
-        .build()
+    // Opcional: cache directory (debe inicializarse desde Application.onCreate)
+    private var cacheDir: File? = null
 
-    // Configuración de Retrofit
+    fun init(context: Context) {
+        cacheDir = File(context.cacheDir, "http_cache")
+    }
+
+    // Construye el cliente OkHttp usando cache si está inicializado
+    private val okHttpClient: OkHttpClient by lazy {
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+
+        // Añadir logging solo en DEBUG (definido arriba)
+        builder.addInterceptor(loggingInterceptor)
+
+        // Si se inicializó cacheDir en Application, úsala
+        cacheDir?.let { dir ->
+            try {
+                val cache = Cache(dir, HTTP_CACHE_SIZE)
+                builder.cache(cache)
+            } catch (ignored: Exception) {
+                // Si falla la creación del cache, seguimos sin cache pero no rompemos la app
+            }
+        }
+
+        builder.build()
+    }
+
+    // Configuraci9n de Retrofit
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)

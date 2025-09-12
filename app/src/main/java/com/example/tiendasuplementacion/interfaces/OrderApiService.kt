@@ -18,4 +18,14 @@ interface OrderApiService {
 
     @DELETE("/api/orders/{id}")
     suspend fun delete(@Path("id") id: Long)
+
+    // Admin endpoints (if backend supports them)
+    @PATCH("/api/orders/{id}/status")
+    suspend fun updateStatus(@Path("id") id: Long, @Body body: Map<String, Any>): Order
+
+    @POST("/api/orders/{id}/refund")
+    suspend fun refund(@Path("id") id: Long, @Body body: Map<String, Any>): Order
+
+    @PATCH("/api/orders/{id}/tracking")
+    suspend fun assignTracking(@Path("id") id: Long, @Body body: Map<String, Any>): Order
 }

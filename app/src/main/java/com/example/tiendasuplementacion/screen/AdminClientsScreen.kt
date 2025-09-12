@@ -10,6 +10,8 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,22 +79,17 @@ fun AdminClientsScreen(
 
                 // Búsqueda rápida por usuario o email
                 var query by remember { mutableStateOf("") }
-                // debounce state
-                val coroutineScope = rememberCoroutineScope()
-                var debouncedQuery by remember { mutableStateOf("") }
-                var debounceJob by remember { mutableStateOf<Job?>(null) }
+
+                // Debounce idiomático usando snapshotFlow + produceState
+                val debouncedQuery by produceState(initialValue = "", key1 = query) {
+                    snapshotFlow { query }
+                        .debounce(300L)
+                        .collect { v -> value = v }
+                }
 
                 OutlinedTextField(
                     value = query,
-                    onValueChange = {
-                        query = it
-                        // cancel previous job and start debounce
-                        debounceJob?.cancel()
-                        debounceJob = coroutineScope.launch {
-                            delay(300L)
-                            debouncedQuery = query
-                        }
-                    },
+                    onValueChange = { query = it },
                     placeholder = { Text("Buscar por usuario o email...") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -106,25 +103,19 @@ fun AdminClientsScreen(
                         unfocusedPlaceholderColor = Color(0xFFF6E7DF).copy(alpha = 0.6f)
                     )
                 )
-
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color(0xFFF6E7DF))
-                    }
-                } else {
-                    // Filtrar la lista localmente para una respuesta instantánea
-                    val filtered = remember(userDetailsList, debouncedQuery) {
+                // Filtrar la lista localmente para una respuesta instantánea usando derivedStateOf
+                val filtered by remember(userDetailsList, debouncedQuery) {
+                    derivedStateOf {
                         if (debouncedQuery.isBlank()) userDetailsList
                         else userDetailsList.filter { ud ->
                             ud.username.contains(debouncedQuery, ignoreCase = true) || ud.email.contains(debouncedQuery, ignoreCase = true)
                         }
                     }
+                }
 
+                Box(modifier = Modifier.weight(1f)) {
                     LazyColumn(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(filtered, key = { it.id }) { userDetail ->
@@ -178,14 +169,22 @@ fun AdminClientsScreen(
                                             TextButton(onClick = { selectedUser = userDetail }) {
                                                 Text("Ver historial")
                                             }
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            TextButton(onClick = { navController.navigate("productForm") }) {
-                                                Text("Agregar producto")
-                                            }
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    // Loading overlay para evitar re-layouts grandes
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFFF6E7DF))
                         }
                     }
                 }
@@ -214,12 +213,8 @@ fun AdminClientsScreen(
                     )
                 },
                 text = {
-                    val scrollState = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(scrollState)
-                            .padding(vertical = 8.dp)
-                    ) {
+                        // Usar LazyColumn dentro del diálogo para historiales grandes
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
                         Text(
                             text = "Información Personal",
                             style = MaterialTheme.typography.titleMedium,
@@ -271,28 +266,35 @@ fun AdminClientsScreen(
                             if (orders.isEmpty()) {
                                 Text("No hay pedidos registrados")
                             } else {
-                                orders.forEach { order ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    ) {
-                                        Column(
+                                // Lazy list para historial
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 320.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(orders, key = { it.order_id }) { order ->
+                                        Card(
                                             modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(8.dp)
-                                        ) {
-                                            Text(
-                                                text = "Pedido #${order.order_id}",
-                                                fontWeight = FontWeight.Bold
+                                                .fillMaxWidth(),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                                             )
-                                            Text("Fecha: ${order.date_order}")
-                                            Text("Estado: ${order.status.name}")
-                                            Text("Total: $${order.total}")
-                                            Text("Productos: ${order.total_products}")
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Pedido #${order.order_id}",
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text("Fecha: ${order.date_order}")
+                                                Text("Estado: ${order.status.name}")
+                                                Text("Total: $${order.total}")
+                                                Text("Productos: ${order.total_products}")
+                                            }
                                         }
                                     }
                                 }

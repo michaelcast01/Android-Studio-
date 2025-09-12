@@ -18,6 +18,15 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.CartViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import coil.compose.rememberAsyncImagePainter
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.ui.platform.LocalContext
+import android.util.Log
+import com.example.tiendasuplementacion.util.CurrencyFormatter
+import com.example.tiendasuplementacion.data.CartDataStore
+import kotlinx.coroutines.launch
+import coil.ImageLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,18 +34,46 @@ fun CartScreen(
     navController: NavController,
     cartViewModel: CartViewModel
 ) {
+    val context = LocalContext.current
+    val imageLoader = ImageLoader.Builder(context).build()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val cartDataStore = remember { CartDataStore(context) }
+    
     val cartItems by cartViewModel.cartItems.collectAsState()
     val error by cartViewModel.error.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var productToDelete by remember { mutableStateOf<Long?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
 
     LaunchedEffect(error) {
         val errorValue = error
         if (errorValue != null && (errorValue.contains("No se pudo conectar") || errorValue.contains("599"))) {
             showNetworkError = true
             networkErrorMessage = errorValue
+        }
+    }
+    
+    // Persistir carrito automáticamente
+    LaunchedEffect(cartItems) {
+        if (cartItems.isNotEmpty()) {
+            try {
+                // Convertir CartItem del viewmodel a CartItem del DataStore
+                val dataStoreItems = cartItems.map { cartItem ->
+                    com.example.tiendasuplementacion.data.CartItem(
+                        productId = cartItem.product.id.toInt(),
+                        name = cartItem.product.name,
+                        price = cartItem.product.price,
+                        quantity = cartItem.quantity,
+                        imageUrl = cartItem.product.url_image
+                    )
+                }
+                cartDataStore.saveCartItems(dataStoreItems)
+            } catch (e: Exception) {
+                Log.e("CartScreen", "Error guardando carrito", e)
+            }
         }
     }
 
@@ -51,12 +88,39 @@ fun CartScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        productToDelete?.let { cartViewModel.removeFromCart(it) }
-                        showDeleteConfirmation = false
-                        productToDelete = null
-                    }
+                        isProcessing = true
+                        try {
+                            productToDelete?.let { cartViewModel.removeFromCart(it) }
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Producto eliminado del carrito",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CartScreen", "Error eliminando producto", e)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "No se pudo eliminar el producto",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        } finally {
+                            isProcessing = false
+                            showDeleteConfirmation = false
+                            productToDelete = null
+                        }
+                    },
+                    enabled = !isProcessing
                 ) {
-                    Text("Sí")
+                    if (isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Sí")
+                    }
                 }
             },
             dismissButton = {
@@ -131,7 +195,7 @@ fun CartScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(item.product.name, style = MaterialTheme.typography.titleMedium, color = Color(0xFFF6E7DF))
-                                    Text("Precio: $${item.product.price * item.quantity}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                    Text("Precio: ${CurrencyFormatter.format(item.product.price * item.quantity)}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
@@ -179,7 +243,7 @@ fun CartScreen(
             Spacer(modifier = Modifier.height(16.dp))
             if (cartItems.isNotEmpty()) {
                 Text(
-                    "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
+                    "Total: ${CurrencyFormatter.format(cartViewModel.getTotalPrice())}",
                     style = MaterialTheme.typography.titleLarge,
                     color = Color(0xFF23242A), // Color más oscuro para el total
                     modifier = Modifier.align(Alignment.End)
@@ -222,7 +286,7 @@ fun CartScreen(
                 ) {
                     // Totales arriba de los botones
                     Text(
-                        "Total: $${String.format("%.2f", cartViewModel.getTotalPrice())}",
+                        "Total: ${CurrencyFormatter.format(cartViewModel.getTotalPrice())}",
                         style = MaterialTheme.typography.titleLarge,
                         color = Color(0xFFF6E7DF), // Color claro para el total
                         modifier = Modifier.align(Alignment.End)
@@ -236,19 +300,43 @@ fun CartScreen(
                     )
                     Button(
                         onClick = {
-                            navController.navigate("paymentSelection") { launchSingleTop = true }
+                            isProcessing = true
+                            try {
+                                navController.navigate("paymentSelection") { launchSingleTop = true }
+                            } catch (e: Exception) {
+                                Log.e("CartScreen", "Error navegando a pago", e)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Error al procesar. Intenta de nuevo.",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            } finally {
+                                isProcessing = false
+                            }
                         },
+                        enabled = !isProcessing,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(
-                            Icons.Default.ShoppingCart,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Confirmar Orden", color = Color.White)
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Procesando...", color = Color.White)
+                        } else {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Confirmar Orden", color = Color.White)
+                        }
                     }
                     OutlinedButton(
                         onClick = { navController.navigate("products") { launchSingleTop = true } },
@@ -260,5 +348,11 @@ fun CartScreen(
                 }
             }
         }
+        
+        // SnackbarHost para feedback
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }

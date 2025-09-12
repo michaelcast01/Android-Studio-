@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
+import com.example.tiendasuplementacion.util.CurrencyFormatter
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +55,8 @@ fun OrderConfirmationScreen(
     var createdOrderId by remember { mutableStateOf<Long?>(null) }
     var finalOrderTotal by remember { mutableStateOf(0.0) }
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -213,7 +217,7 @@ fun OrderConfirmationScreen(
                                 color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                             )
                             Text(
-                                text = "Precio: $${item.product.price * item.quantity}",
+                                text = "Precio: ${CurrencyFormatter.format(item.product.price * item.quantity)}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color(0xFFF6E7DF)
                             )
@@ -254,7 +258,7 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "$${String.format("%.2f", total)}",
+                        text = CurrencyFormatter.format(total),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFFF6E7DF)
                     )
@@ -293,7 +297,7 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF)
                     )
                     Text(
-                        text = "$${String.format("%.2f", total)}",
+                        text = CurrencyFormatter.format(total),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFF6E7DF)
@@ -352,8 +356,9 @@ fun OrderConfirmationScreen(
                         
                     } catch (e: Exception) {
                         Log.e("OrderConfirmation", "Error creando orden", e)
-                        errorMessage = "No se pudo procesar la orden. Por favor intenta nuevamente."
-                        showError = true
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("No se pudo procesar la orden. Por favor intenta nuevamente.")
+                        }
                     } finally {
                         isLoading = false
                     }
@@ -450,7 +455,7 @@ fun OrderConfirmationScreen(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                     Text(
-                        text = "Total: $${String.format("%.2f", finalOrderTotal)}",
+                        text = "Total: ${CurrencyFormatter.format(finalOrderTotal)}",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 4.dp)
                     )

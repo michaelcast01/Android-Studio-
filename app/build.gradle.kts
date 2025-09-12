@@ -22,8 +22,17 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            // Habilitar logging en builds de debug
+            buildConfigField("boolean", "LOGGING_ENABLED", "true")
+        }
         release {
-            isMinifyEnabled = false
+            // Activar minificación y eliminación de recursos en release ayuda a reducir el tamaño del APK/AAB.
+            // Probar en un build de staging antes de promover a producción.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // Desactivar logging en releases por seguridad y tamaño de log
+            buildConfigField("boolean", "LOGGING_ENABLED", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -39,6 +48,8 @@ android {
     }
     buildFeatures {
         compose = true
+    // Necesario para usar buildConfigField en buildTypes
+    buildConfig = true
     }
     
     // Añadir configuración para manejar la advertencia de ashmem
@@ -108,4 +119,12 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // Paging 3
+    implementation("androidx.paging:paging-runtime:3.1.1")
+    implementation("androidx.paging:paging-compose:1.0.0-alpha20")
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    // Coil optimized
+    implementation("io.coil-kt:coil:2.4.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
 }

@@ -38,6 +38,12 @@ import com.example.tiendasuplementacion.util.PdfGenerator
 import java.io.File
 import android.content.Intent
 import android.widget.Toast
+import android.util.Log
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import com.example.tiendasuplementacion.util.CurrencyFormatter
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +53,9 @@ fun OrderScreen(
     authViewModel: AuthViewModel = viewModel(),
     context: Context
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    
     val userDetail by userDetailViewModel.userDetail.observeAsState()
     val isLoading by userDetailViewModel.isLoading.observeAsState(false)
     val error by userDetailViewModel.error.observeAsState()
@@ -55,10 +64,21 @@ fun OrderScreen(
     var networkErrorMessage by remember { mutableStateOf("") }
     var selectedOrder by remember { mutableStateOf<UserOrder?>(null) }
     var showOrderDetails by remember { mutableStateOf(false) }
+    var isProcessingPdf by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser?.id) {
         currentUser?.id?.let { userId ->
-            userDetailViewModel.fetchUserDetails(userId)
+            try {
+                userDetailViewModel.fetchUserDetails(userId)
+            } catch (e: Exception) {
+                Log.e("OrderScreen", "Error fetching user details", e)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "Error al cargar el historial de compras",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
         }
     }
 
@@ -119,15 +139,17 @@ fun OrderScreen(
                                 )
                             }
                         } else {
-                            items(orders) { order ->
+                            // Mostrar el último pedido destacado primero (asumimos orders ya vienen ordenados por ViewModel)
+                            val latest = orders.first()
+                            item {
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 8.dp),
-                                    elevation = CardDefaults.cardElevation(10.dp),
+                                    elevation = CardDefaults.cardElevation(12.dp),
                                     shape = RoundedCornerShape(16.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFF26272B)
+                                        containerColor = Color(0xFF3A3B40)
                                     )
                                 ) {
                                     Column(
@@ -136,17 +158,17 @@ fun OrderScreen(
                                             .padding(16.dp)
                                     ) {
                                         Text(
-                                            text = "Pedido #${order.order_id}",
+                                            text = "Último Pedido — #${latest.order_id}",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFFF6E7DF)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
-                                        Text("Fecha: ${order.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                        Text("Estado: ${order.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                        Text("Total: $${order.total}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                        Text("Productos: ${order.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
-                                        
+                                        Text("Fecha: ${latest.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Estado: ${latest.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Total: ${CurrencyFormatter.format(latest.total)}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        Text("Productos: ${latest.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
                                             text = "Productos:",
@@ -154,15 +176,28 @@ fun OrderScreen(
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFFF6E7DF)
                                         )
-                                        order.products.forEach { product ->
-                                            Text("• ${product.name} - $${product.price}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                        latest.products.take(3).forEach { product ->
+                                            Text("• ${product.name} - ${CurrencyFormatter.format(product.price)}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                                         }
-                                        
+                                        if (latest.products.size > 3) {
+                                            Text("... y ${latest.products.size - 3} más", color = Color(0xFFF6E7DF).copy(alpha = 0.6f))
+                                        }
+
                                         Spacer(modifier = Modifier.height(16.dp))
                                         Button(
                                             onClick = {
-                                                selectedOrder = order
-                                                showOrderDetails = true
+                                                try {
+                                                    selectedOrder = latest
+                                                    showOrderDetails = true
+                                                } catch (e: Exception) {
+                                                    Log.e("OrderScreen", "Error showing order details", e)
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar(
+                                                            message = "Error al mostrar detalles del pedido",
+                                                            duration = SnackbarDuration.Short
+                                                        )
+                                                    }
+                                                }
                                             },
                                             modifier = Modifier.fillMaxWidth(),
                                             colors = ButtonDefaults.buttonColors(
@@ -171,6 +206,79 @@ fun OrderScreen(
                                             shape = RoundedCornerShape(8.dp)
                                         ) {
                                             Text("Ver Detalles Completos")
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Luego mostrar el resto de pedidos (excluyendo el primero)
+                            if (orders.size > 1) {
+                                items(items = orders.drop(1), key = { it.order_id }) { order ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp),
+                                        elevation = CardDefaults.cardElevation(10.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFF26272B)
+                                        )
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp)
+                                        ) {
+                                            Text(
+                                                text = "Pedido #${order.order_id}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFF6E7DF)
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text("Fecha: ${order.date_order}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                            Text("Estado: ${order.status.name}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                            Text("Total: ${CurrencyFormatter.format(order.total)}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                            Text("Productos: ${order.total_products}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "Productos:",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFFF6E7DF)
+                                            )
+                                            order.products.take(3).forEach { product -> // Limitar a 3 productos para evitar overflow
+                                                Text("• ${product.name} - ${CurrencyFormatter.format(product.price)}", color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
+                                            }
+                                            if (order.products.size > 3) {
+                                                Text("... y ${order.products.size - 3} más", color = Color(0xFFF6E7DF).copy(alpha = 0.6f))
+                                            }
+
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Button(
+                                                onClick = {
+                                                    try {
+                                                        selectedOrder = order
+                                                        showOrderDetails = true
+                                                    } catch (e: Exception) {
+                                                        Log.e("OrderScreen", "Error showing order details", e)
+                                                        coroutineScope.launch {
+                                                            snackbarHostState.showSnackbar(
+                                                                message = "Error al mostrar detalles del pedido",
+                                                                duration = SnackbarDuration.Short
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = MaterialTheme.colorScheme.primary
+                                                ),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text("Ver Detalles Completos")
+                                            }
                                         }
                                     }
                                 }
@@ -186,30 +294,62 @@ fun OrderScreen(
                     onRetry = {
                         showNetworkError = false
                         currentUser?.id?.let { userId ->
-                            userDetailViewModel.fetchUserDetails(userId)
+                            try {
+                                userDetailViewModel.fetchUserDetails(userId)
+                            } catch (e: Exception) {
+                                Log.e("OrderScreen", "Error retrying user details", e)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = "Error al reintentar",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                }
+                            }
                         }
                     },
                     onDismiss = { showNetworkError = false }
                 )
             }
         }
+        
+        // SnackbarHost para feedback
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
     if (showOrderDetails && selectedOrder != null) {
-        // Generate PDF when showing order details
+        // Generate PDF safely when showing order details
         val pdfPath = remember(selectedOrder) {
             selectedOrder?.let { order ->
-                PdfGenerator.generateInvoicePdf(context, order)
+                try {
+                    PdfGenerator.generateInvoicePdf(context, order)
+                } catch (e: Exception) {
+                    Log.e("OrderScreen", "Error generating PDF", e)
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = "Error al generar la factura PDF",
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                    ""
+                }
             } ?: ""
         }
 
         val pdfUri = remember(pdfPath) {
-            if (pdfPath.isNotEmpty()) {
-                FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    File(pdfPath)
-                )
+                    if (pdfPath.isNotEmpty()) {
+                try {
+                    FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        File(pdfPath)
+                    )
+                } catch (e: Exception) {
+                    Log.e("OrderScreen", "Error creating file URI", e)
+                    null
+                }
             } else null
         }
 
@@ -243,7 +383,7 @@ fun OrderScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Fecha: ${selectedOrder?.date_order}", color = Color.Black)
                     Text("Estado: ${selectedOrder?.status?.name}", color = Color.Black)
-                    Text("Total: $${selectedOrder?.total}", color = Color.Black)
+                    Text("Total: ${selectedOrder?.total?.let { CurrencyFormatter.format(it) } ?: "N/A"}", color = Color.Black)
                     Text("Cantidad de productos: ${selectedOrder?.total_products}", color = Color.Black)
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -311,7 +451,7 @@ fun OrderScreen(
                                     color = Color.Black
                                 )
                                 Text(
-                                    text = "$${product.price}",
+                                    text = CurrencyFormatter.format(product.price),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.Gray
                                 )
@@ -321,40 +461,117 @@ fun OrderScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Sección de Factura
+                    // Sección de Factura - Siempre visible
+                    Text(
+                        text = "Factura Digital",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3F51B5)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
                     if (pdfUri != null) {
-                        Text(
-                            text = "Factura Digital",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3F51B5)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
+                        // PDF generado correctamente
                         Button(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    setDataAndType(pdfUri, "application/pdf")
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                }
+                                isProcessingPdf = true
                                 try {
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(pdfUri, "application/pdf")
+                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    }
                                     context.startActivity(intent)
                                 } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    Toast.makeText(
-                                        context,
-                                        "No se encontró una aplicación para abrir PDFs",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                    Log.e("OrderScreen", "Error opening PDF", e)
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "No se encontró una aplicación para abrir PDFs",
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                } finally {
+                                    isProcessingPdf = false
                                 }
                             },
+                            enabled = !isProcessingPdf,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF3F51B5)
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Ver Factura PDF")
+                            if (isProcessingPdf) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Abriendo...")
+                            } else {
+                                Text("Ver Factura PDF")
+                            }
                         }
+                    } else {
+                        // Error en la generación del PDF o aún generando
+                        OutlinedButton(
+                            onClick = {
+                                isProcessingPdf = true
+                                coroutineScope.launch {
+                                    try {
+                                        selectedOrder?.let { order ->
+                                            val newPdfPath = PdfGenerator.generateInvoicePdf(context, order)
+                                                if (newPdfPath.isNotEmpty()) {
+                                                val newPdfUri = FileProvider.getUriForFile(
+                                                    context,
+                                                    "${context.packageName}.fileprovider",
+                                                    File(newPdfPath)
+                                                )
+                                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                    setDataAndType(newPdfUri, "application/pdf")
+                                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                                }
+                                                context.startActivity(intent)
+                                            } else {
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Error al generar la factura PDF",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("OrderScreen", "Error generating/opening PDF", e)
+                                        snackbarHostState.showSnackbar(
+                                            message = "Error al generar o abrir la factura PDF",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    } finally {
+                                        isProcessingPdf = false
+                                    }
+                                }
+                            },
+                            enabled = !isProcessingPdf,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (isProcessingPdf) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Generando PDF...")
+                            } else {
+                                Text("Generar y Ver Factura PDF")
+                            }
+                        }
+                        
+                        // Mensaje explicativo
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "La factura PDF se generará al hacer clic en el botón",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             },

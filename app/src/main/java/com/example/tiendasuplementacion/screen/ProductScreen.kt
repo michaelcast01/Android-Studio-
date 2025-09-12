@@ -43,8 +43,15 @@ import com.example.tiendasuplementacion.model.CategoryProduct
 import com.example.tiendasuplementacion.model.Category
 import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
 import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import android.util.Log
 import com.example.tiendasuplementacion.R
 import com.example.tiendasuplementacion.component.ShimmerPlaceholder
+import com.example.tiendasuplementacion.util.CurrencyFormatter
+import coil.ImageLoader
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,13 +63,16 @@ fun ProductScreen(
     categoryProductViewModel: CategoryProductViewModel = viewModel(),
     categoryViewModel: CategoryViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val imageLoader = ImageLoader.Builder(context).build()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    
     val products by productViewModel.products.observeAsState(emptyList())
     val isLoading by productViewModel.isLoading.observeAsState(false)
     val productsUiState by productViewModel.uiState.collectAsState()
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartItemCount by remember { derivedStateOf { cartItems.sumOf { it.quantity } } }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
     val currentUser by authViewModel.currentUser.collectAsState()
     val categoryProducts by categoryProductViewModel.relations.observeAsState(emptyList())
     val categories by categoryViewModel.categories.observeAsState(emptyList())
@@ -83,13 +93,14 @@ fun ProductScreen(
             networkErrorMessage = error ?: ""
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A),
                         Color(0xFF23242A)
                     )
                 )
@@ -125,12 +136,11 @@ fun ProductScreen(
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF26272B))
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                    Box(modifier = Modifier
+                                    ShimmerPlaceholder(modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(100.dp)
-                                        .background(Color(0xFF333438)))
+                                        .height(100.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Box(modifier = Modifier.fillMaxWidth(0.6f).height(18.dp).background(Color(0xFF333438)))
+                                    ShimmerPlaceholder(modifier = Modifier.fillMaxWidth(0.6f).height(18.dp))
                                 }
                             }
                         }
@@ -149,16 +159,27 @@ fun ProductScreen(
                                 onAddToCart = {
                                     try {
                                         cartViewModel.addToCart(it)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Producto agregado al carrito",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
                                     } catch (e: Exception) {
-                                        android.util.Log.e("ProductScreen", "Error agregando al carrito", e)
-                                        errorMessage = "No se pudo agregar el producto al carrito. Intenta de nuevo."
-                                        showError = true
+                                        Log.e("ProductScreen", "Error agregando al carrito", e)
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = "No se pudo agregar el producto al carrito",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
                                     }
                                 },
                                 categoryProducts = categoryProducts,
                                 categories = categories,
                                 isAdmin = isAdmin,
-                                navController = navController
+                                navController = navController,
+                                imageLoader = imageLoader
                             )
                         }
                     }
@@ -179,7 +200,8 @@ fun ProductScreen(
                 }
             }
         }
-    AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != ADMIN_ROLE) {
+        
+        AnimatedVisibility(visible = cartItemCount > 0 && currentUser?.role_id != ADMIN_ROLE) {
             FloatingActionButton(
                 onClick = { navController.navigate("cart") },
                 containerColor = Color(0xFFF6E7DF),
@@ -194,7 +216,8 @@ fun ProductScreen(
                 }
             }
         }
-    if (currentUser?.role_id == ADMIN_ROLE) {
+        
+        if (currentUser?.role_id == ADMIN_ROLE) {
             FloatingActionButton(
                 onClick = { navController.navigate("productForm") },
                 containerColor = Color(0xFFF6E7DF),
@@ -205,6 +228,7 @@ fun ProductScreen(
                 Icon(Icons.Default.Add, contentDescription = "Agregar producto", tint = Color(0xFF23242A))
             }
         }
+        
         if (showNetworkError) {
             NetworkErrorBanner(
                 message = networkErrorMessage,
@@ -215,6 +239,14 @@ fun ProductScreen(
                 onDismiss = { showNetworkError = false }
             )
         }
+        
+        // SnackbarHost para feedback
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 80.dp)
+        )
     }
 }
 
@@ -225,7 +257,8 @@ fun ProductCard(
     categoryProducts: List<CategoryProduct>,
     categories: List<Category>,
     isAdmin: Boolean = false,
-    navController: NavController
+    navController: NavController,
+    imageLoader: ImageLoader
 ) {
     val isOutOfStock = product.stock <= 0
     val categoryProduct = categoryProducts.find { it.product_id == product.id }
@@ -234,6 +267,7 @@ fun ProductCard(
     }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showProductDetails by remember { mutableStateOf(false) }
+    var isAdding by remember { mutableStateOf(false) }
     val productViewModel: ProductViewModel = viewModel()
 
     if (showDeleteConfirmation) {
@@ -274,6 +308,7 @@ fun ProductCard(
                             .data(product.url_image)
                             .crossfade(true)
                             .build(),
+                        imageLoader = imageLoader,
                         contentDescription = product.name,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -308,7 +343,7 @@ fun ProductCard(
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "Precio: $${product.price}",
+                        text = "Precio: ${CurrencyFormatter.format(product.price)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -349,6 +384,7 @@ fun ProductCard(
                     .data(product.url_image)
                     .crossfade(true)
                     .build(),
+                imageLoader = imageLoader,
                 contentDescription = product.name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -380,7 +416,7 @@ fun ProductCard(
                 color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
             )
             Text(
-                text = "$${product.price}",
+                text = CurrencyFormatter.format(product.price),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color(0xFFF6E7DF)
             )
@@ -420,24 +456,34 @@ fun ProductCard(
                     }
                 } else {
                     Button(
-                        onClick = { onAddToCart(product) },
-                        enabled = !isOutOfStock,
+                        onClick = { 
+                            isAdding = true
+                            onAddToCart(product)
+                            isAdding = false
+                        },
+                        enabled = !isOutOfStock && !isAdding,
                         modifier = Modifier.weight(1f).padding(start = 4.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFF6E7DF)
                         )
                     ) {
-                        Icon(
-                            Icons.Default.ShoppingCart,
-                            contentDescription = "Agregar al carrito",
-                            modifier = Modifier.size(20.dp),
-                            tint = Color(0xFF23242A)
-                        )
+                        if (isAdding) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color(0xFF23242A),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = "Agregar al carrito",
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF23242A)
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
-// Reuse ShimmerPlaceholder from component package
