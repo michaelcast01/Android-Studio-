@@ -15,6 +15,7 @@ import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,6 +164,16 @@ fun SettingsScreen(
                 }
             } ?: run {
                 Text("No se encontraron configuraciones")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = {
+                    Log.d("SettingsScreen", "¡Clic!")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Validación Correo")
             }
         }
 
