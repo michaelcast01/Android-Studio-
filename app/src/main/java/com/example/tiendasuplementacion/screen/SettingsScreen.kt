@@ -18,6 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import android.util.Log
 import com.example.tiendasuplementacion.util.EnvConfig
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +43,16 @@ fun SettingsScreen(
     var isAddingPayment by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var addedPaymentName by remember { mutableStateOf("") }
+    
+    // Estados para validación de email
     var isEmailValidated by remember { mutableStateOf(false) }
+    var isEmailVerifying by remember { mutableStateOf(false) }
+    var verificationId by remember { mutableStateOf<String?>(null) }
+    var emailVerificationStatus by remember { mutableStateOf<String?>(null) }
+    var showVerificationResult by remember { mutableStateOf(false) }
+    var verificationMessage by remember { mutableStateOf("") }
+    
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
@@ -57,13 +72,101 @@ fun SettingsScreen(
         }
     }
 
+    // Función para verificar el estado periódicamente
+    fun pollVerificationStatus(verificationId: String) {
+        coroutineScope.launch {
+            var attempts = 0
+            val maxAttempts = 10
+            
+            while (attempts < maxAttempts && isEmailVerifying) {
+                delay(3000) // Esperar 3 segundos entre verificaciones
+                
+                try {
+                    val status = settingViewModel.checkVerificationStatus(verificationId)
+                    
+                    when (status.status) {
+                        "COMPLETED" -> {
+                            isEmailVerifying = false
+                            emailVerificationStatus = status.emailStatus
+                            
+                            when (status.emailStatus) {
+                                "VALID" -> {
+                                    isEmailValidated = true
+                                    verificationMessage = "✅ Email verificado correctamente"
+                                }
+                                "INVALID" -> {
+                                    verificationMessage = "❌ Email no válido"
+                                }
+                                "UNKNOWN" -> {
+                                    verificationMessage = "⚠️ Estado del email incierto"
+                                }
+                            }
+                            showVerificationResult = true
+                            break
+                        }
+                        "FAILED" -> {
+                            isEmailVerifying = false
+                            verificationMessage = "❌ Error en la verificación"
+                            showVerificationResult = true
+                            break
+                        }
+                        "PENDING" -> {
+                            // Continuar esperando
+                            Log.d("SettingsScreen", "Verificación aún pendiente...")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SettingsScreen", "Error al verificar estado", e)
+                }
+                
+                attempts++
+            }
+            
+            if (attempts >= maxAttempts && isEmailVerifying) {
+                isEmailVerifying = false
+                verificationMessage = "⏱️ Tiempo de verificación agotado"
+                showVerificationResult = true
+            }
+        }
+    }
+
+    // Función para iniciar verificación de email
+    fun startEmailVerification(email: String) {
+        coroutineScope.launch {
+            isEmailVerifying = true
+            try {
+                // Llamada a la API de verificación
+                val response = settingViewModel.startEmailVerification(
+                    email = email,
+                    callbackUrl = "https://your-app-callback.com/email-verification/callback"
+                )
+                
+                verificationId = response.verificationId
+                Log.d("SettingsScreen", "Verificación iniciada con ID: ${response.verificationId}")
+                
+                // Mostrar mensaje de que se envió la verificación
+                verificationMessage = "Verificación enviada. Revisando estado..."
+                showVerificationResult = true
+                
+                // Polling para verificar el estado (simular callback)
+                pollVerificationStatus(response.verificationId)
+                
+            } catch (e: Exception) {
+                Log.e("SettingsScreen", "Error al iniciar verificación", e)
+                isEmailVerifying = false
+                verificationMessage = "Error al enviar verificación: ${e.message}"
+                showVerificationResult = true
+            }
+        }
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF23242A), // Fondo oscuro
+                        Color(0xFF23242A),
                         Color(0xFF23242A)
                     )
                 )
@@ -190,6 +293,13 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = "Email",
+                                tint = Color(0xFFF6E7DF).copy(alpha = 0.8f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = email,
                                 color = Color(0xFFF6E7DF),
@@ -197,69 +307,107 @@ fun SettingsScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Validar",
-                                color = Color(0xFFF6E7DF).copy(alpha = 0.8f),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Checkbox(
-                                checked = isEmailValidated,
-                                onCheckedChange = { /* Solo visual, no cambiar estado */ },
-                                enabled = false,
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Color(0xFF4CAF50),
-                                    uncheckedColor = Color(0xFFF6E7DF).copy(alpha = 0.6f),
-                                    disabledUncheckedColor = Color(0xFFF6E7DF).copy(alpha = 0.3f)
+                            
+                            // Mostrar estado de verificación
+                            if (isEmailVerifying) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color(0xFF4CAF50),
+                                    strokeWidth = 2.dp
                                 )
-                            )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Verificando...",
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.8f),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } else {
+                                when (emailVerificationStatus) {
+                                    "VALID" -> {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = "Verificado",
+                                            tint = Color(0xFF4CAF50),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    "INVALID" -> {
+                                        Icon(
+                                            imageVector = Icons.Default.Warning,
+                                            contentDescription = "No válido",
+                                            tint = Color(0xFFFF5722),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    "UNKNOWN" -> {
+                                        Icon(
+                                            imageVector = Icons.Default.Warning,
+                                            contentDescription = "Desconocido",
+                                            tint = Color(0xFFFF9800),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    else -> {
+                                        Text(
+                                            text = "No verificado",
+                                            color = Color(0xFFF6E7DF).copy(alpha = 0.6f),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                }
+                            }
                         }
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Button(
                             onClick = {
-                                val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
-                                
-                                Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
-                                
-                                // Mostrar todas las variables de entorno disponibles
-                                EnvConfig.getAllProperties().forEach { (key, value) ->
-                                    // Enmascarar valores sensibles para seguridad
-                                    val maskedValue = if (key.contains("PASSWORD") || 
-                                                        key.contains("TOKEN") || 
-                                                        key.contains("KEY")) {
-                                        "*".repeat(value.length.coerceAtMost(8))
-                                    } else {
-                                        value
-                                    }
-                                    Log.d("SettingsScreen", "$key: $maskedValue")
+                                if (!isEmailVerifying) {
+                                    startEmailVerification(email)
                                 }
-                                
-                                Log.d("SettingsScreen", "===============================================")
-                                Log.d("SettingsScreen", "¡Botón de validación de correo presionado!")
                             },
+                            enabled = !isEmailVerifying,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Enviar Validación a $email")
+                            if (isEmailVerifying) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Verificando...")
+                                }
+                            } else {
+                                Text(
+                                    when (emailVerificationStatus) {
+                                        "VALID" -> "✅ Verificado - Enviar nuevamente"
+                                        "INVALID" -> "❌ Inválido - Verificar nuevamente"
+                                        "UNKNOWN" -> "⚠️ Incierto - Verificar nuevamente"
+                                        else -> "Enviar Verificación a $email"
+                                    }
+                                )
+                            }
                         }
                     }
-                }
-            } ?: run {
-                Button(
-                    onClick = {
-                        val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
+                } ?: run {
+                    Button(
+                        onClick = {
+                            val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
                       
                         
-                        Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
-                        
-                        // Mostrar todas las variables de entorno disponibles
-                        EnvConfig.getAllProperties().forEach { (key, value) ->
-                            // Enmascarar valores sensibles para seguridad
-                            val maskedValue = if (key.contains("PASSWORD") || 
-                                                key.contains("TOKEN") || 
-                                                key.contains("KEY")) {
-                                "*".repeat(value.length.coerceAtMost(8))
+                            Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
+                            
+                            // Mostrar todas las variables de entorno disponibles
+                            EnvConfig.getAllProperties().forEach { (key, value) ->
+                                // Enmascarar valores sensibles para seguridad
+                                val maskedValue = if (key.contains("PASSWORD") || 
+                                                        key.contains("TOKEN") || 
+                                                        key.contains("KEY")) {
+                                    "*".repeat(value.length.coerceAtMost(8))
                             } else {
                                 value
                             }
@@ -352,6 +500,44 @@ fun SettingsScreen(
                 onDismiss = { showNetworkError = false }
             )
         }
+
+        // Dialog para mostrar resultado de verificación
+        if (showVerificationResult) {
+            AlertDialog(
+                onDismissRequest = { showVerificationResult = false },
+                title = { 
+                    Text(
+                        when {
+                            verificationMessage.contains("✅") -> "Verificación Exitosa"
+                            verificationMessage.contains("❌") -> "Verificación Fallida"
+                            verificationMessage.contains("⚠️") -> "Verificación Incierta"
+                            verificationMessage.contains("⏱️") -> "Tiempo Agotado"
+                            else -> "Estado de Verificación"
+                        }
+                    ) 
+                },
+                text = { 
+                    Column {
+                        Text(verificationMessage)
+                        verificationId?.let { id ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "ID de verificación: $id",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showVerificationResult = false }) {
+                        Text("Aceptar")
+                    }
+                }
+            )
+        }
     }
+}
+
 }
 
