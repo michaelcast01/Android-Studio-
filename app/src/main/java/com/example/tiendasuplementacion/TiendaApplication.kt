@@ -7,11 +7,15 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.example.tiendasuplementacion.network.RetrofitClient
+import com.example.tiendasuplementacion.util.EnvConfig
 
 class TiendaApplication : Application(), ImageLoaderFactory {
     
     override fun onCreate() {
         super.onCreate()
+        EnvConfig.initialize(this)
+        EnvConfig.logAllVariables()
+        
         RetrofitClient.init(this)
     }
     

@@ -16,6 +16,7 @@ import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import android.util.Log
+import com.example.tiendasuplementacion.util.EnvConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +170,26 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = {
-                    Log.d("SettingsScreen", "¡Clic!")
+                    val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
+                  
+                    
+                    Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
+                    
+                    // Mostrar todas las variables de entorno disponibles
+                    EnvConfig.getAllProperties().forEach { (key, value) ->
+                        // Enmascarar valores sensibles para seguridad
+                        val maskedValue = if (key.contains("PASSWORD") || 
+                                            key.contains("TOKEN") || 
+                                            key.contains("KEY")) {
+                            "*".repeat(value.length.coerceAtMost(8))
+                        } else {
+                            value
+                        }
+                        Log.d("SettingsScreen", "$key: $maskedValue")
+                    }
+                    
+                    Log.d("SettingsScreen", "===============================================")
+                    Log.d("SettingsScreen", "¡Botón de validación de correo presionado!")
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

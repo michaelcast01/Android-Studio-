@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Variables de entorno - NO SUBIR AL REPOSITORIO
+.env
+app/src/main/assets/.env
+
+# Archivos de configuración sensibles
+config.properties
+secrets.properties
