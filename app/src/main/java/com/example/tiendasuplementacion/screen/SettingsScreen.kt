@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,6 +37,7 @@ fun SettingsScreen(
     var isAddingPayment by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var addedPaymentName by remember { mutableStateOf("") }
+    var isEmailValidated by remember { mutableStateOf(false) }
 
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
@@ -168,32 +170,109 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = {
-                    val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
-                  
-                    
-                    Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
-                    
-                    // Mostrar todas las variables de entorno disponibles
-                    EnvConfig.getAllProperties().forEach { (key, value) ->
-                        // Enmascarar valores sensibles para seguridad
-                        val maskedValue = if (key.contains("PASSWORD") || 
-                                            key.contains("TOKEN") || 
-                                            key.contains("KEY")) {
-                            "*".repeat(value.length.coerceAtMost(8))
-                        } else {
-                            value
+            
+            // Mostrar email con checkbox de validación y botón
+            currentUser?.email?.let { email ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    elevation = CardDefaults.cardElevation(10.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF26272B)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = email,
+                                color = Color(0xFFF6E7DF),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Validar",
+                                color = Color(0xFFF6E7DF).copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Checkbox(
+                                checked = isEmailValidated,
+                                onCheckedChange = { /* Solo visual, no cambiar estado */ },
+                                enabled = false,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF4CAF50),
+                                    uncheckedColor = Color(0xFFF6E7DF).copy(alpha = 0.6f),
+                                    disabledUncheckedColor = Color(0xFFF6E7DF).copy(alpha = 0.3f)
+                                )
+                            )
                         }
-                        Log.d("SettingsScreen", "$key: $maskedValue")
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Button(
+                            onClick = {
+                                val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
+                                
+                                Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
+                                
+                                // Mostrar todas las variables de entorno disponibles
+                                EnvConfig.getAllProperties().forEach { (key, value) ->
+                                    // Enmascarar valores sensibles para seguridad
+                                    val maskedValue = if (key.contains("PASSWORD") || 
+                                                        key.contains("TOKEN") || 
+                                                        key.contains("KEY")) {
+                                        "*".repeat(value.length.coerceAtMost(8))
+                                    } else {
+                                        value
+                                    }
+                                    Log.d("SettingsScreen", "$key: $maskedValue")
+                                }
+                                
+                                Log.d("SettingsScreen", "===============================================")
+                                Log.d("SettingsScreen", "¡Botón de validación de correo presionado!")
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Enviar Validación a $email")
+                        }
                     }
-                    
-                    Log.d("SettingsScreen", "===============================================")
-                    Log.d("SettingsScreen", "¡Botón de validación de correo presionado!")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Validación Correo")
+                }
+            } ?: run {
+                Button(
+                    onClick = {
+                        val emailApiKey = EnvConfig.get("EMAIL_API_KEY", "No encontrada")
+                      
+                        
+                        Log.d("SettingsScreen", "EMAIL_API_KEY: $emailApiKey")
+                        
+                        // Mostrar todas las variables de entorno disponibles
+                        EnvConfig.getAllProperties().forEach { (key, value) ->
+                            // Enmascarar valores sensibles para seguridad
+                            val maskedValue = if (key.contains("PASSWORD") || 
+                                                key.contains("TOKEN") || 
+                                                key.contains("KEY")) {
+                                "*".repeat(value.length.coerceAtMost(8))
+                            } else {
+                                value
+                            }
+                            Log.d("SettingsScreen", "$key: $maskedValue")
+                        }
+                        
+                        Log.d("SettingsScreen", "===============================================")
+                        Log.d("SettingsScreen", "¡Botón de validación de correo presionado!")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Validación Correo")
+                }
             }
         }
 
