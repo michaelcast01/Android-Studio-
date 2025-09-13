@@ -92,7 +92,6 @@ class SettingViewModel : ViewModel() {
             try {
                 val settingId = _settingDetail.value?.id ?: return@launch
                 repository.addPaymentMethod(settingId, paymentId)
-                // Actualizar los detalles después de agregar el método de pago
                 fetchSettingDetails(settingId)
             } catch (e: Exception) {
                 _error.value = e.message
@@ -108,7 +107,6 @@ class SettingViewModel : ViewModel() {
         }
     }
 
-    // Función para iniciar verificación de email
     suspend fun startEmailVerification(email: String, callbackUrl: String): EmailVerificationResponse {
         return withContext(Dispatchers.IO) {
             try {
@@ -125,10 +123,8 @@ class SettingViewModel : ViewModel() {
                     )
                 )
 
-                // Aquí harías la llamada real a tu API
                 // val response = apiService.startEmailVerification(request)
 
-                // Simulación de respuesta por ahora
                 EmailVerificationResponse(
                     verificationId = "c1003800-3e08-418b-b43b-b96cf82b3b80",
                     status = "PENDING",
@@ -143,14 +139,11 @@ class SettingViewModel : ViewModel() {
         }
     }
 
-    // Función para verificar el estado de verificación
     suspend fun checkVerificationStatus(verificationId: String): VerificationStatusResponse {
         return withContext(Dispatchers.IO) {
             try {
-                // Aquí harías la llamada real a tu API
                 // val response = apiService.getVerificationStatus(verificationId)
 
-                // Simulación de respuesta que cambia con el tiempo
                 val emailStatuses = listOf("VALID", "INVALID", "UNKNOWN")
                 val randomStatus = emailStatuses.random()
 
