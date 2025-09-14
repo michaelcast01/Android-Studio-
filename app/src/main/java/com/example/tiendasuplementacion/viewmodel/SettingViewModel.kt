@@ -7,10 +7,11 @@ import com.example.tiendasuplementacion.model.SettingDetail
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.repository.SettingRepository
 import com.example.tiendasuplementacion.util.EnvConfig
+import com.example.tiendasuplementacion.network.RetrofitClient
+import com.example.tiendasuplementacion.interfaces.EmailVerificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.http.*
 
 data class EmailVerificationRequest(
     val email: String,
@@ -45,6 +46,8 @@ data class VerificationStatusResponse(
 
 class SettingViewModel : ViewModel() {
     private val repository = SettingRepository()
+    private val emailVerificationService = RetrofitClient.emailVerificationService
+
     private val _settings = MutableLiveData<List<Setting>>()
     val settings: LiveData<List<Setting>> = _settings
 
@@ -56,6 +59,9 @@ class SettingViewModel : ViewModel() {
 
     private val _error = MutableLiveData<String>()
     val error: LiveData<String> = _error
+
+    private val _apiInfo = MutableLiveData<EmailVerificationService>()
+    val apiInfo: LiveData<EmailVerificationService> = _apiInfo
 
     fun fetchSettings() {
         viewModelScope.launch {
@@ -123,18 +129,13 @@ class SettingViewModel : ViewModel() {
                     )
                 )
 
-                // val response = apiService.startEmailVerification(request)
-
-                EmailVerificationResponse(
-                    verificationId = "c1003800-3e08-418b-b43b-b96cf82b3b80",
-                    status = "PENDING",
-                    message = "Email verification initiated. You will receive a callback when completed.",
-                    email = email
-                )
+                val response = emailVerificationService.startEmailVerification(request)
+                Log.d("SettingViewModel", "Email verification started: ${response.verificationId}")
+                response
 
             } catch (e: Exception) {
                 Log.e("SettingViewModel", "Error starting email verification", e)
-                throw e
+                throw Exception("Error al iniciar verificación de email: ${e.message}")
             }
         }
     }
@@ -142,25 +143,16 @@ class SettingViewModel : ViewModel() {
     suspend fun checkVerificationStatus(verificationId: String): VerificationStatusResponse {
         return withContext(Dispatchers.IO) {
             try {
-                // val response = apiService.getVerificationStatus(verificationId)
-
-                val emailStatuses = listOf("VALID", "INVALID", "UNKNOWN")
-                val randomStatus = emailStatuses.random()
-
-                VerificationStatusResponse(
-                    verificationId = verificationId,
-                    emailAddress = "user@example.com",
-                    status = "COMPLETED",
-                    emailStatus = randomStatus,
-                    createdAt = "2024-01-15T10:30:00",
-                    updatedAt = "2024-01-15T10:32:00",
-                    verifiedAt = "2024-01-15T10:32:00"
-                )
+                val response = emailVerificationService.getVerificationStatus(verificationId)
+                Log.d("SettingViewModel", "Verification status: ${response.status} - ${response.emailStatus}")
+                response
 
             } catch (e: Exception) {
                 Log.e("SettingViewModel", "Error checking verification status", e)
-                throw e
+                throw Exception("Error al verificar estado: ${e.message}")
             }
         }
     }
+
 }
+

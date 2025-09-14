@@ -76,4 +76,5 @@ object RetrofitClient {
     val statusService: StatusApiService by lazy { retrofit.create(StatusApiService::class.java) }
     val categoryProductService: CategoryProductApiService by lazy { retrofit.create(CategoryProductApiService::class.java) }
     val orderProductService: OrderProductApiService by lazy { retrofit.create(OrderProductApiService::class.java) }
+    val emailVerificationService: EmailVerificationService by lazy { retrofit.create(EmailVerificationService::class.java) }
 }
