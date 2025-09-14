@@ -28,20 +28,20 @@ data class CallbackConfig(
 )
 
 data class EmailVerificationResponse(
-    val verificationId: String,
+    val verification_id: String,
     val status: String,
     val message: String,
     val email: String
 )
 
 data class VerificationStatusResponse(
-    val verificationId: String,
-    val emailAddress: String,
+    val verification_id: String,
+    val email_address: String,
     val status: String,
-    val emailStatus: String?,
-    val createdAt: String?,
-    val updatedAt: String?,
-    val verifiedAt: String?
+    val email_status: String?,
+    val created_at: String?,
+    val updated_at: String?,
+    val verified_at: String?
 )
 
 class SettingViewModel : ViewModel() {
@@ -119,18 +119,17 @@ class SettingViewModel : ViewModel() {
                 val request = EmailVerificationRequest(
                     email = email,
                     callback = CallbackConfig(
-                        url = callbackUrl,
+                        url = "http://localhost:8080/api/email-verification/callback",
                         method = "POST",
                         headers = mapOf(
-                            "Content-Type" to "application/json",
-                            "Authorization" to "Bearer ${EnvConfig.get("EMAIL_API_KEY", "default_token")}",
-                            "X-App-Source" to "TiendaSuplementacion"
+                            "authorization" to "3a71KlUgY833X5vBkHOsM6YjgPfbqZ6d4HNiBn7q",
+                            "content-type" to "application/json"
                         )
                     )
                 )
 
                 val response = emailVerificationService.startEmailVerification(request)
-                Log.d("SettingViewModel", "Email verification started: ${response.verificationId}")
+                Log.d("SettingViewModel", "Email verification started: ${response.verification_id}")
                 response
 
             } catch (e: Exception) {
@@ -144,7 +143,7 @@ class SettingViewModel : ViewModel() {
         return withContext(Dispatchers.IO) {
             try {
                 val response = emailVerificationService.getVerificationStatus(verificationId)
-                Log.d("SettingViewModel", "Verification status: ${response.status} - ${response.emailStatus}")
+                Log.d("SettingViewModel", "Verification status: ${response.status} - ${response.email_status}")
                 response
 
             } catch (e: Exception) {

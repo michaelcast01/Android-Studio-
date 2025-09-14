@@ -35,7 +35,11 @@ fun SettingsScreen(
     val currentUser by authViewModel.currentUser.collectAsState()
     val settingDetail by settingViewModel.settingDetail.observeAsState()
     val availablePayments by settingViewModel.availablePayments.observeAsState()
-    val error by settingViewModel.error.observeAsState()    
+    val error by settingViewModel.error.observeAsState()
+    
+    // Estados para verificación de email - removed problematic observeAsState calls
+    // These will be handled differently until the ViewModel properties are available
+    
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var showPaymentMethods by remember { mutableStateOf(false) }
@@ -83,21 +87,15 @@ fun SettingsScreen(
                 delay(3000) // Esperar 3 segundos entre verificaciones
                 
                 try {
-                    Log.d("SettingsScreen", "Verificando estado para verificationId: $verificationId")
-                    
-                    // Llamar al endpoint de verificación de estado
+                    // This will need to be implemented in the ViewModel
                     val status = settingViewModel.checkVerificationStatus(verificationId)
-                    
-                    Log.d("SettingsScreen", "Estado recibido: ${status.status}")
                     
                     when (status.status) {
                         "COMPLETED" -> {
                             isEmailVerifying = false
-                            emailVerificationStatus = status.email_status
+                            emailVerificationStatus = status.emailStatus
                             
-                            Log.d("SettingsScreen", "Verificación completada. Email status: ${status.email_status}")
-                            
-                            when (status.email_status) {
+                            when (status.emailStatus) {
                                 "VALID" -> {
                                     verificationMessage = "✅ Email verificado correctamente"
                                 }
@@ -107,9 +105,6 @@ fun SettingsScreen(
                                 "UNKNOWN" -> {
                                     verificationMessage = "⚠️ Estado del email incierto"
                                 }
-                                else -> {
-                                    verificationMessage = "❓ Estado desconocido: ${status.email_status}"
-                                }
                             }
                             showVerificationResult = true
                             break
@@ -118,26 +113,14 @@ fun SettingsScreen(
                             isEmailVerifying = false
                             verificationMessage = "❌ Error en la verificación"
                             showVerificationResult = true
-                            Log.e("SettingsScreen", "Verificación falló")
                             break
                         }
                         "PENDING" -> {
-                            Log.d("SettingsScreen", "Verificación aún pendiente... intento ${attempts + 1}/$maxAttempts")
-                        }
-                        else -> {
-                            Log.w("SettingsScreen", "Estado no reconocido: ${status.status}")
+                            Log.d("SettingsScreen", "Verificación aún pendiente...")
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e("SettingsScreen", "Error al verificar estado en intento ${attempts + 1}", e)
-                    
-                    // Si es el último intento, mostrar error
-                    if (attempts >= maxAttempts - 1) {
-                        isEmailVerifying = false
-                        verificationMessage = "❌ Error al verificar estado: ${e.message}"
-                        showVerificationResult = true
-                        break
-                    }
+                    Log.e("SettingsScreen", "Error al verificar estado", e)
                 }
                 
                 attempts++
@@ -145,9 +128,8 @@ fun SettingsScreen(
             
             if (attempts >= maxAttempts && isEmailVerifying) {
                 isEmailVerifying = false
-                verificationMessage = "⏱️ Tiempo de verificación agotado. Intentos máximos alcanzados."
+                verificationMessage = "⏱️ Tiempo de verificación agotado"
                 showVerificationResult = true
-                Log.w("SettingsScreen", "Tiempo de verificación agotado después de $maxAttempts intentos")
             }
         }
     }
@@ -157,16 +139,15 @@ fun SettingsScreen(
         isEmailVerifying = true
         coroutineScope.launch {
             try {
-                Log.d("SettingsScreen", "Llamando a startEmailVerification con email=$email y callbackUrl=${EnvConfig.get("BASE_URL", "")}/email-verification/callback")
-                
                 val response = settingViewModel.startEmailVerification(
                     email = email,
-                    callbackUrl = "http://localhost:8080/api/email-verification/callback"
+                    callbackUrl = "${EnvConfig.get("BASE_URL", "")}/email-verification/callback"
                 )
-                Log.d("SettingsScreen", "Respuesta de startEmailVerification: $response")
-                Log.d("SettingsScreen", "verificationId recibido: ${response.verification_id}")
 
-                if (response.verification_id.isNullOrEmpty()) {
+                Log.d("SettingsScreen", "Respuesta de startEmailVerification: $response")
+                Log.d("SettingsScreen", "verificationId recibido: ${response.verificationId}")
+
+                if (response.verificationId.isNullOrEmpty()) {
                     isEmailVerifying = false
                     verificationMessage = "❌ Error: No se recibió un ID de verificación válido."
                     showVerificationResult = true
@@ -174,12 +155,12 @@ fun SettingsScreen(
                     return@launch
                 }
 
-                currentVerificationId = response.verification_id
+                currentVerificationId = response.verificationId
                 verificationMessage = "📧 Verificación enviada. Revisando estado..."
                 showVerificationResult = true
 
                 // Iniciar polling para verificar el estado solo si verificationId es válido
-                pollVerificationStatus(response.verification_id)
+                pollVerificationStatus(response.verificationId)
 
             } catch (e: Exception) {
                 isEmailVerifying = false

@@ -27,7 +27,7 @@ fun StatusScreen(
         title = "Estados",
         items = statuses,
         onItemClick = {},
-        onCreateClick = { navController.navigate("statusForm") } // ← Ya corregido aquí
+        onCreateClick = { navController.navigate("statusForm") }
     ) { status ->
         Column(Modifier.padding(8.dp)) {
             Text("Estado: ${status.name}", fontWeight = FontWeight.Bold)
