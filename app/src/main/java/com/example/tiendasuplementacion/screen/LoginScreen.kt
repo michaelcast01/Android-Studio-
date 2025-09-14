@@ -30,7 +30,10 @@ import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.viewmodel.RoleViewModel
 import com.example.tiendasuplementacion.viewmodel.SettingViewModel
 import com.example.tiendasuplementacion.viewmodel.ADMIN_ROLE
+import com.example.tiendasuplementacion.util.EnvConfig
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,14 @@ fun LoginScreen(
     var city by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     
+    // Estados para verificación de email
+    var isEmailVerifying by remember { mutableStateOf(false) }
+    var showVerificationDialog by remember { mutableStateOf(false) }
+    var verificationMessage by remember { mutableStateOf("") }
+    var currentVerificationId by remember { mutableStateOf<String?>(null) }
+    var emailVerificationStatus by remember { mutableStateOf<String?>(null) }
+    var emailVerified by remember { mutableStateOf(false) }
+    
     val roles by roleViewModel.roles.observeAsState(emptyList())
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -76,6 +87,120 @@ fun LoginScreen(
         if (error != null) {
             showError = true
             errorMessage = error ?: ""
+        }
+    }
+
+    // Función para hacer polling del estado de verificación
+    fun pollVerificationStatus(verificationId: String) {
+        scope.launch {
+            var attempts = 0
+            val maxAttempts = 10
+            
+            while (attempts < maxAttempts && isEmailVerifying) {
+                delay(3000) // Esperar 3 segundos entre verificaciones
+                
+                try {
+                    Log.d("LoginScreen", "Verificando estado para verificationId: $verificationId")
+                    
+                    val status = settingViewModel.checkVerificationStatus(verificationId)
+                    
+                    Log.d("LoginScreen", "Estado recibido: ${status.status}")
+                    
+                    when (status.status) {
+                        "COMPLETED" -> {
+                            isEmailVerifying = false
+                            emailVerificationStatus = status.email_status
+                            
+                            when (status.email_status) {
+                                "VALID" -> {
+                                    verificationMessage = "✅ Email verificado correctamente. Ahora puedes completar tu registro."
+                                    emailVerified = true
+                                }
+                                "INVALID" -> {
+                                    verificationMessage = "❌ Email no válido. Por favor, verifica tu dirección de correo."
+                                    emailVerified = false
+                                }
+                                "UNKNOWN" -> {
+                                    verificationMessage = "⚠️ Estado del email incierto. Puedes continuar pero se recomienda verificar nuevamente."
+                                    emailVerified = false
+                                }
+                            }
+                            showVerificationDialog = true
+                            break
+                        }
+                        "FAILED" -> {
+                            isEmailVerifying = false
+                            verificationMessage = "❌ Error en la verificación del email"
+                            emailVerified = false
+                            showVerificationDialog = true
+                            break
+                        }
+                        "PENDING" -> {
+                            Log.d("LoginScreen", "Verificación aún pendiente... intento ${attempts + 1}/$maxAttempts")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("LoginScreen", "Error al verificar estado en intento ${attempts + 1}", e)
+                    
+                    if (attempts >= maxAttempts - 1) {
+                        isEmailVerifying = false
+                        verificationMessage = "❌ Error al verificar estado: ${e.message}"
+                        emailVerified = false
+                        showVerificationDialog = true
+                        break
+                    }
+                }
+                
+                attempts++
+            }
+            
+            if (attempts >= maxAttempts && isEmailVerifying) {
+                isEmailVerifying = false
+                verificationMessage = "⏱️ Tiempo de verificación agotado. Puedes continuar pero se recomienda verificar el email."
+                emailVerified = false
+                showVerificationDialog = true
+            }
+        }
+    }
+
+    // Función para iniciar verificación de email
+    fun startEmailVerification(email: String) {
+        isEmailVerifying = true
+        verificationMessage = "📧 Enviando verificación..."
+        showVerificationDialog = true
+        
+        scope.launch {
+            try {
+                Log.d("LoginScreen", "Iniciando verificación de email para: $email")
+                
+                val response = settingViewModel.startEmailVerification(
+                    email = email,
+                    callbackUrl = "http://localhost:8080/api/email-verification/callback"
+                )
+                
+                Log.d("LoginScreen", "Respuesta de startEmailVerification: $response")
+
+                if (response.verification_id.isNullOrEmpty()) {
+                    isEmailVerifying = false
+                    verificationMessage = "❌ Error: No se pudo iniciar la verificación."
+                    emailVerified = false
+                    showVerificationDialog = true
+                    return@launch
+                }
+
+                currentVerificationId = response.verification_id
+                verificationMessage = "📧 Verificación enviada. Verificando estado..."
+
+                // Iniciar polling para verificar el estado
+                pollVerificationStatus(response.verification_id)
+
+            } catch (e: Exception) {
+                isEmailVerifying = false
+                verificationMessage = "❌ Error al enviar verificación: ${e.message}"
+                emailVerified = false
+                showVerificationDialog = true
+                Log.e("LoginScreen", "Error starting email verification", e)
+            }
         }
     }
 
@@ -139,29 +264,87 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        emailTouched = true
-                    },
-                    label = { Text("Email", color = Color(0xFFF6E7DF)) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFFF6E7DF))
-                    },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading,
-                    shape = RoundedCornerShape(12.dp),
-                    isError = emailTouched && !isValidEmail(email),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF26272B),
-                        unfocusedContainerColor = Color(0xFF26272B),
-                        focusedTextColor = Color(0xFFF6E7DF),
-                        unfocusedTextColor = Color(0xFFF6E7DF),
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            emailTouched = true
+                            // Reset verification status when email changes
+                            if (isRegistering) {
+                                emailVerified = false
+                                emailVerificationStatus = null
+                            }
+                        },
+                        label = { Text("Email", color = Color(0xFFF6E7DF)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Email, contentDescription = null, tint = Color(0xFFF6E7DF))
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(12.dp),
+                        isError = emailTouched && !isValidEmail(email),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF26272B),
+                            unfocusedContainerColor = Color(0xFF26272B),
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                        )
                     )
-                )
+
+                    if (isRegistering && isValidEmail(email)) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        // Email verification status indicator
+                        when {
+                            isEmailVerifying -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color(0xFF4CAF50),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                            emailVerified -> {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Email verificado",
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            emailVerificationStatus == "INVALID" -> {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Email no válido",
+                                    tint = Color(0xFFFF5722),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            else -> {
+                                IconButton(
+                                    onClick = { 
+                                        if (!isEmailVerifying && isValidEmail(email)) {
+                                            startEmailVerification(email)
+                                        }
+                                    },
+                                    enabled = !isEmailVerifying && isValidEmail(email)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VerifiedUser,
+                                        contentDescription = "Verificar email",
+                                        tint = Color(0xFFF6E7DF)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (emailTouched && !isValidEmail(email)) {
                     Text(
                         text = "El correo debe contener @",
@@ -169,6 +352,25 @@ fun LoginScreen(
                         fontSize = 13.sp,
                         modifier = Modifier.align(Alignment.Start)
                     )
+                }
+
+                if (isRegistering && !emailVerified && isValidEmail(email)) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "⚠️ Debes verificar tu email antes de registrarte. Haz clic en el ícono de verificación junto al campo de email.",
+                            color = Color(0xFFFF9800),
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -286,11 +488,25 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         scope.launch {
+                            // Si estamos en modo registro y el email no está verificado, iniciar verificación
+                            if (isRegistering && !emailVerified && isValidEmail(email)) {
+                                startEmailVerification(email)
+                                return@launch
+                            }
+                            
                             isLoading = true
                             showError = false
                             errorMessage = ""
 
                             if (isRegistering) {
+                                // Verificar que el email esté validado antes de continuar
+                                if (!emailVerified) {
+                                    showError = true
+                                    errorMessage = "Debes verificar tu email antes de registrarte"
+                                    isLoading = false
+                                    return@launch
+                                }
+
                                 val setting = Setting(
                                     id = 0,
                                     payment_id = 1,
@@ -321,14 +537,22 @@ fun LoginScreen(
                         .height(50.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4B5FD5),
+                        containerColor = if (isRegistering && !emailVerified && isValidEmail(email)) {
+                            Color(0xFFFF9800) // Color naranja para indicar que verificará el email
+                        } else if (isRegistering && !emailVerified) {
+                            Color(0xFF4B5FD5).copy(alpha = 0.5f)
+                        } else {
+                            Color(0xFF4B5FD5)
+                        },
                         contentColor = Color.White
                     ),
                     enabled = if (isRegistering) {
+                        // Permitir hacer clic si todos los campos están llenos y el email es válido
                         email.isNotBlank() && password.isNotBlank() && username.isNotBlank() &&
-                        phone.isNotBlank() && city.isNotBlank() && address.isNotBlank() && isValidEmail(email)
+                        phone.isNotBlank() && city.isNotBlank() && address.isNotBlank() && 
+                        isValidEmail(email) && !isLoading && !isEmailVerifying
                     } else {
-                        email.isNotBlank() && password.isNotBlank() && isValidEmail(email)
+                        email.isNotBlank() && password.isNotBlank() && isValidEmail(email) && !isLoading
                     }
                 ) {
                     if (isLoading) {
@@ -338,7 +562,15 @@ fun LoginScreen(
                         )
                     } else {
                         Text(
-                            text = if (isRegistering) "Registrar" else "Ingresar",
+                            text = if (isRegistering) {
+                                if (!emailVerified && isValidEmail(email)) {
+                                    "Verificar Email"
+                                } else {
+                                    "Registrar"
+                                }
+                            } else {
+                                "Ingresar"
+                            },
                             fontSize = 16.sp,
                             color = Color.White
                         )
@@ -348,7 +580,13 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(
-                    onClick = { isRegistering = !isRegistering }
+                    onClick = { 
+                        isRegistering = !isRegistering
+                        // Reset verification states when switching modes
+                        emailVerified = false
+                        emailVerificationStatus = null
+                        isEmailVerifying = false
+                    }
                 ) {
                     Text(
                         if (isRegistering) "¿Ya tienes una cuenta? Inicia sesión" 
@@ -361,6 +599,72 @@ fun LoginScreen(
                     // Mostrar botón de agregar producto
                 }
             }
+        }
+
+        // Dialog para mostrar resultado de verificación de email
+        if (showVerificationDialog) {
+            AlertDialog(
+                onDismissRequest = { showVerificationDialog = false },
+                title = {
+                    Text(
+                        when {
+                            verificationMessage.contains("✅") -> "Email Verificado"
+                            verificationMessage.contains("❌") -> "Error de Verificación"
+                            verificationMessage.contains("⚠️") -> "Verificación Incierta"
+                            verificationMessage.contains("⏱️") -> "Tiempo Agotado"
+                            verificationMessage.contains("📧") -> "Verificando Email"
+                            else -> "Estado de Verificación"
+                        }
+                    )
+                },
+                text = {
+                    Column {
+                        if (isEmailVerifying) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(verificationMessage)
+                            }
+                        } else {
+                            Text(verificationMessage)
+                        }
+                        
+                        currentVerificationId?.let { id ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "ID de verificación: $id",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (!isEmailVerifying) {
+                        TextButton(onClick = { showVerificationDialog = false }) {
+                            Text("Continuar")
+                        }
+                    }
+                },
+                dismissButton = {
+                    if (!isEmailVerifying && !emailVerified && isValidEmail(email)) {
+                        TextButton(
+                            onClick = {
+                                showVerificationDialog = false
+                                startEmailVerification(email)
+                            }
+                        ) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+            )
         }
     }
 }
