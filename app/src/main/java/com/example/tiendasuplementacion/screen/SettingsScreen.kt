@@ -85,8 +85,8 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.padding(16.dp))
 
-            // Solo mostrar los botones de métodos de pago si NO es un administrador
-            if (currentUser?.role_id != 2L) {
+            // Solo mostrar los botones de métodos de pago si es un usuario (role_id 1 = user, role_id 2 = admin)
+            if (currentUser?.role_id == 1L) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween

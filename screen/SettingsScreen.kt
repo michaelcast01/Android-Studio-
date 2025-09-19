@@ -93,9 +93,9 @@ fun SettingsScreen(
                     when (status.status) {
                         "COMPLETED" -> {
                             isEmailVerifying = false
-                            emailVerificationStatus = status.emailStatus
+                            emailVerificationStatus = status.email_status
                             
-                            when (status.emailStatus) {
+                            when (status.email_status) {
                                 "VALID" -> {
                                     verificationMessage = "✅ Email verificado correctamente"
                                 }
@@ -145,9 +145,9 @@ fun SettingsScreen(
                 )
 
                 Log.d("SettingsScreen", "Respuesta de startEmailVerification: $response")
-                Log.d("SettingsScreen", "verificationId recibido: ${response.verificationId}")
+                Log.d("SettingsScreen", "verificationId recibido: ${response.verification_id}")
 
-                if (response.verificationId.isNullOrEmpty()) {
+                if (response.verification_id.isNullOrEmpty()) {
                     isEmailVerifying = false
                     verificationMessage = "❌ Error: No se recibió un ID de verificación válido."
                     showVerificationResult = true
@@ -155,12 +155,12 @@ fun SettingsScreen(
                     return@launch
                 }
 
-                currentVerificationId = response.verificationId
+                currentVerificationId = response.verification_id
                 verificationMessage = "📧 Verificación enviada. Revisando estado..."
                 showVerificationResult = true
 
                 // Iniciar polling para verificar el estado solo si verificationId es válido
-                pollVerificationStatus(response.verificationId)
+                pollVerificationStatus(response.verification_id)
 
             } catch (e: Exception) {
                 isEmailVerifying = false
@@ -197,8 +197,8 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.padding(16.dp))
 
-            // Solo mostrar los botones de métodos de pago si NO es un administrador
-            if (currentUser?.role_id != 2L) {
+            // Solo mostrar los botones de métodos de pago si NO es un administrador (role_id 1 = user, role_id 2 = admin)
+            if (currentUser?.role_id == 1L) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween

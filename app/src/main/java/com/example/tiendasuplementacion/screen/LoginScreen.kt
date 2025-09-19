@@ -1,3 +1,5 @@
+@file:Suppress("MISSING_DEPENDENCY_SUPERCLASS_IN_TYPE_ARGUMENT")
+
 package com.example.tiendasuplementacion.screen
 
 import androidx.compose.foundation.background
@@ -34,6 +36,8 @@ import com.example.tiendasuplementacion.util.EnvConfig
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.util.Log
+import kotlinx.serialization.Serializable
+import java.io.Serializable as JavaSerializable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

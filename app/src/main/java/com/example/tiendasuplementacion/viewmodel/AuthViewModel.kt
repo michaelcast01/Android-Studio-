@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-const val ADMIN_ROLE = 1L
+const val ADMIN_ROLE = 2L  // Role ID 2 = Admin, Role ID 1 = User
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = UserRepository()

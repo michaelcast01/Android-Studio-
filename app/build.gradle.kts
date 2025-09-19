@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
-    compileSdk = 36
+    compileSdkVersion("android-36.1")
 
     defaultConfig {
         applicationId = "com.example.tiendasuplementacion"
