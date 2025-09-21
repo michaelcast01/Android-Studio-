@@ -98,7 +98,7 @@ fun PaymentConfigScreen(
                     )
                 }
                 Text(
-                    text = "Configurar Método de Pago",
+                    text = "Configurar Método de Pago", 
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color(0xFFF6E7DF),
                     modifier = Modifier.padding(start = 16.dp)
@@ -164,9 +164,19 @@ fun PaymentConfigScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campos para tarjeta
             val selectedPayment = payments.find { it.id == selectedPaymentId }
-            if (selectedPayment?.name in listOf("DEBITO", "CREDITO")) {
+            val isCardPayment = selectedPayment?.name in listOf("debito", "credito", "credit_card", "debit_card", "Debito", "Credito")
+            
+            if (isCardPayment) {
+                // Título para los campos de tarjeta
+                Text(
+                    text = "Información de la Tarjeta",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFFF6E7DF),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                
                 OutlinedTextField(
                     value = cardNumber,
                     onValueChange = { cardNumber = it },
@@ -191,7 +201,7 @@ fun PaymentConfigScreen(
                     OutlinedTextField(
                         value = expirationDate,
                         onValueChange = { expirationDate = it },
-                        label = { Text("Fecha de Vencimiento", color = Color(0xFFF6E7DF)) },
+                        label = { Text("Fecha de Vencimiento (MM/AA)", color = Color(0xFFF6E7DF)) },
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp),
@@ -228,7 +238,7 @@ fun PaymentConfigScreen(
                 OutlinedTextField(
                     value = cardholderName,
                     onValueChange = { cardholderName = it },
-                    label = { Text("Nombre en la Tarjeta", color = Color(0xFFF6E7DF)) },
+                    label = { Text("Nombre del Titular", color = Color(0xFFF6E7DF)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color(0xFFF6E7DF),
@@ -372,7 +382,9 @@ fun PaymentConfigScreen(
                     }
 
                     val selectedPayment = payments.find { it.id == selectedPaymentId }
-                    if (selectedPayment?.name in listOf("DEBITO", "CREDITO")) {
+                    val isCardPayment = selectedPayment?.name?.lowercase() in listOf("credito","credit","credit_card","credito_tarjeta","debito","debit","debit_card","debito_tarjeta")
+                    
+                    if (isCardPayment) {
                         if (cardNumber.isBlank() || expirationDate.isBlank() || cvc.isBlank() || cardholderName.isBlank()) {
                             errorMessage = "Por favor complete todos los campos de la tarjeta"
                             showError = true
@@ -390,14 +402,15 @@ fun PaymentConfigScreen(
                     currentUser?.id?.let { userId ->
                         val paymentDetail = PaymentDetail(
                             id = 0,
+                            active = true,
                             payment = selectedPayment!!,
                             payment_id = selectedPaymentId!!,
                             user = currentUser!!,
                             user_id = userId,
-                            cardNumber = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cardNumber else null,
-                            expirationDate = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) expirationDate else null,
-                            cvc = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cvc else null,
-                            cardholderName = if (selectedPayment.name in listOf("DEBITO", "CREDITO")) cardholderName else null,
+                            cardNumber = if (isCardPayment) cardNumber else null,
+                            expirationDate = if (isCardPayment) expirationDate else null,
+                            cvc = if (isCardPayment) cvc else null,
+                            cardholderName = if (isCardPayment) cardholderName else null,
                             country = country,
                             addressLine1 = addressLine1,
                             addressLine2 = addressLine2.ifBlank { null },
@@ -449,4 +462,4 @@ fun PaymentConfigScreen(
             )
         }
     }
-} 
+}

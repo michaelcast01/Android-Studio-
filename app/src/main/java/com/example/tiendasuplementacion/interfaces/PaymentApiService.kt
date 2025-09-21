@@ -2,6 +2,8 @@ package com.example.tiendasuplementacion.interfaces
 
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.model.PaymentDetail
+import com.example.tiendasuplementacion.model.TestPaymentRequest
+import com.example.tiendasuplementacion.model.TestPaymentResponse
 import retrofit2.http.*
 
 interface PaymentApiService {
@@ -31,4 +33,7 @@ interface PaymentApiService {
 
     @PUT("/api/additional-info-payments/{id}")
     suspend fun updatePaymentDetail(@Path("id") id: Long, @Body paymentDetail: PaymentDetail): PaymentDetail
+
+    @POST("/api/payments/create-test-payment")
+    suspend fun createTestPayment(@Body request: TestPaymentRequest): TestPaymentResponse
 }

@@ -2,6 +2,7 @@ package com.example.tiendasuplementacion.model
 
 data class PaymentDetail(
     val id: Long,
+    val active: Boolean = true,
     val payment: Payment,
     val payment_id: Long,
     val user: User,

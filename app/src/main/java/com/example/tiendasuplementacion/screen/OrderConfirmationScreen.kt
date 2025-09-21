@@ -23,6 +23,9 @@ import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
 import com.example.tiendasuplementacion.model.OrderProductDetail
 import com.example.tiendasuplementacion.model.PaymentDetail
+import com.example.tiendasuplementacion.model.TestPaymentRequest
+import com.example.tiendasuplementacion.model.TestTokens
+import com.example.tiendasuplementacion.repository.PaymentRepository
 import kotlinx.coroutines.launch
 import android.util.Log
 import androidx.compose.material.icons.Icons
@@ -34,6 +37,74 @@ import androidx.compose.ui.text.style.TextAlign
 import com.example.tiendasuplementacion.util.CurrencyFormatter
 import androidx.compose.ui.platform.LocalContext
 
+private fun isCardPaymentMethod(method: String?): Boolean {
+    val cardMethods = listOf(
+        "credito", "credit", "credit_card", "credito_tarjeta",
+        "debito", "debit", "debit_card", "debito_tarjeta"
+    )
+    val isCard = method?.lowercase() in cardMethods
+    Log.d("OrderConfirmation", "Checking payment method: '$method', lowercase: '${method?.lowercase()}', isCard: $isCard")
+    return isCard
+}
+
+private fun isCardPaymentMethodByName(name: String?): Boolean {
+    val cardNames = listOf(
+        "debito", "credito", "credit_card", "debit_card",
+        "DEBITO", "CREDITO", "Debito", "Credito",
+        "credit", "debit", "credito_tarjeta", "debito_tarjeta"
+    )
+    val isCard = name in cardNames
+    Log.d("OrderConfirmation", "Checking payment name: '$name', isCard: $isCard")
+    return isCard
+}
+
+private fun getTestTokenFromCardNumber(cardNumber: String?): String {
+    Log.d("OrderConfirmation", "Getting test token for card number: $cardNumber")
+
+    if (cardNumber == null || cardNumber.length < 4) {
+        Log.d("OrderConfirmation", "Card number is null or too short, using default VISA token")
+        return TestTokens.VISA // Default token
+    }
+
+    val lastDigit = cardNumber.last().digitToIntOrNull() ?: 0
+    Log.d("OrderConfirmation", "Last digit of card: $lastDigit")
+
+    val token = when (lastDigit) {
+        in 0..3 -> TestTokens.VISA
+        in 4..6 -> TestTokens.CHARGE_DECLINED
+        in 7..9 -> TestTokens.CHARGE_DECLINED_INSUFFICIENT_FUNDS
+        else -> TestTokens.VISA
+    }
+
+    Log.d("OrderConfirmation", "Selected token: $token")
+    return token
+}
+
+private fun mapPaymentResponseToStatus(
+    response: com.example.tiendasuplementacion.model.TestPaymentResponse?,
+    isSuccess: Boolean
+): Long {
+    Log.d("OrderConfirmation", "=== MAPPING PAYMENT RESPONSE TO STATUS ===")
+    Log.d("OrderConfirmation", "Response object: $response")
+    Log.d("OrderConfirmation", "isSuccess parameter: $isSuccess")
+    Log.d("OrderConfirmation", "Response status: '${response?.status}'")
+    Log.d("OrderConfirmation", "Response message: '${response?.message}'")
+
+    val status = if (isSuccess && response?.status == "succeeded") {
+        Log.d("OrderConfirmation", "Condition matched: isSuccess && status == 'succeeded' -> returning 2L")
+        2L // Exitoso
+    } else if (response?.message?.contains("insufficient funds", ignoreCase = true) == true) {
+        Log.d("OrderConfirmation", "Condition matched: message contains 'insufficient funds' -> returning 3L")
+        3L // Sin fondos
+    } else {
+        Log.d("OrderConfirmation", "No conditions matched -> returning 4L (denegado)")
+        4L // Denegado
+    }
+
+    Log.d("OrderConfirmation", "Final mapped status: $status")
+    return status
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderConfirmationScreen(
@@ -42,7 +113,8 @@ fun OrderConfirmationScreen(
     selectedPaymentDetail: PaymentDetail,
     authViewModel: AuthViewModel = viewModel(),
     orderViewModel: OrderViewModel = viewModel(),
-    orderProductViewModel: OrderProductViewModel = viewModel()
+    orderProductViewModel: OrderProductViewModel = viewModel(),
+    paymentRepository: PaymentRepository = PaymentRepository()
 ) {
     val cartItems by cartViewModel.cartItems.collectAsState()
     val total = cartViewModel.getTotalPrice()
@@ -54,6 +126,7 @@ fun OrderConfirmationScreen(
     var errorMessage by remember { mutableStateOf("") }
     var createdOrderId by remember { mutableStateOf<Long?>(null) }
     var finalOrderTotal by remember { mutableStateOf(0.0) }
+    var orderStatus by remember { mutableStateOf(1L) } // Para guardar el status de la orden
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -139,9 +212,9 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = "Dirección de facturación:",
                     style = MaterialTheme.typography.bodyMedium,
@@ -247,7 +320,7 @@ fun OrderConfirmationScreen(
                     color = Color(0xFFF6E7DF)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -263,9 +336,9 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -281,11 +354,11 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(6.dp))
                 Divider(color = Color(0xFFF6E7DF).copy(alpha = 0.12f))
                 Spacer(modifier = Modifier.height(6.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -303,9 +376,9 @@ fun OrderConfirmationScreen(
                         color = Color(0xFFF6E7DF)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = "La orden será procesada usando ${selectedPaymentDetail.payment.name}",
                     style = MaterialTheme.typography.bodySmall,
@@ -323,23 +396,128 @@ fun OrderConfirmationScreen(
                 coroutineScope.launch {
                     isLoading = true
                     try {
-                        // Crear la orden con el método de pago seleccionado
+                        var finalStatusId = 1L // Default: pendiente
+
+                        Log.d("OrderConfirmation", "=== STARTING PAYMENT PROCESSING ===")
+                        Log.d("OrderConfirmation", "Initial finalStatusId: $finalStatusId")
+                        Log.d("OrderConfirmation", "Payment Detail Object: $selectedPaymentDetail")
+                        Log.d("OrderConfirmation", "Payment Name: '${selectedPaymentDetail.payment.name}'")
+                        Log.d("OrderConfirmation", "Payment Method: '${selectedPaymentDetail.payment.method}'")
+                        Log.d("OrderConfirmation", "Card Number: '${selectedPaymentDetail.cardNumber}'")
+                        Log.d("OrderConfirmation", "Card Number Length: ${selectedPaymentDetail.cardNumber?.length ?: 0}")
+
+                        // Verificar si es un método de pago con tarjeta (principalmente por cardNumber)
+                        Log.d("OrderConfirmation", "=== CHECKING CARD PAYMENT METHOD ===")
+                        val hasCardNumber = !selectedPaymentDetail.cardNumber.isNullOrBlank()
+                        val isCardByMethod = isCardPaymentMethod(selectedPaymentDetail.payment.method)
+                        val isCardByName = isCardPaymentMethodByName(selectedPaymentDetail.payment.name)
+
+                        // Si tiene cardNumber, es automáticamente un pago con tarjeta
+                        val isCard = hasCardNumber || isCardByMethod || isCardByName
+
+                        Log.d("OrderConfirmation", "hasCardNumber: $hasCardNumber")
+                        Log.d("OrderConfirmation", "isCardByMethod: $isCardByMethod")
+                        Log.d("OrderConfirmation", "isCardByName: $isCardByName")
+                        Log.d("OrderConfirmation", "final isCard: $isCard (primary validation: cardNumber exists)")
+
+                        if (isCard) {
+                            Log.d("OrderConfirmation", "=== CARD PAYMENT DETECTED ===")
+                            Log.d("OrderConfirmation", "Entering card payment processing branch")
+
+                            // Verificar si tenemos número de tarjeta
+                            if (selectedPaymentDetail.cardNumber.isNullOrBlank()) {
+                                Log.w("OrderConfirmation", "=== NO CARD NUMBER AVAILABLE ===")
+                                Log.w("OrderConfirmation", "Card payment detected but no card number available. Using default status.")
+                                finalStatusId = 1L // Mantener como pendiente si no hay número de tarjeta
+                                Log.d("OrderConfirmation", "Set finalStatusId to: $finalStatusId (no card number)")
+                            } else {
+                                Log.d("OrderConfirmation", "=== CARD NUMBER AVAILABLE ===")
+                                Log.d("OrderConfirmation", "Card number found, proceeding with test payment API")
+
+                                // Determinar el token basado en el número de tarjeta
+                                val testToken = getTestTokenFromCardNumber(selectedPaymentDetail.cardNumber)
+                                Log.d("OrderConfirmation", "Generated test token: $testToken")
+
+                                try {
+                                    Log.d("OrderConfirmation", "=== CREATING TEST PAYMENT REQUEST ===")
+
+                                    val testPaymentRequest = TestPaymentRequest(
+                                        amount = (total * 100).toInt(), // Convertir a centavos
+                                        currency = "usd",
+                                        description = "Compra en tienda de suplementación - Orden #${System.currentTimeMillis()}",
+                                        customerEmail = currentUser?.email ?: "customer@example.com",
+                                        customerName = selectedPaymentDetail.cardholderName ?: "${currentUser?.username ?: "Cliente"}",
+                                        testToken = testToken
+                                    )
+
+                                    Log.d("OrderConfirmation", "Test payment request created: $testPaymentRequest")
+                                    Log.d("OrderConfirmation", "About to call createTestPayment API...")
+
+                                    val paymentResponse = paymentRepository.createTestPayment(testPaymentRequest)
+                                    Log.d("OrderConfirmation", "=== TEST PAYMENT API RESPONSE ===")
+                                    Log.d("OrderConfirmation", "Payment response received: $paymentResponse")
+                                    Log.d("OrderConfirmation", "Response status: '${paymentResponse.status}'")
+                                    Log.d("OrderConfirmation", "Response message: '${paymentResponse.message}'")
+
+                                    Log.d("OrderConfirmation", "=== MAPPING RESPONSE TO STATUS ===")
+                                    val mappedStatus = mapPaymentResponseToStatus(paymentResponse, true)
+                                    Log.d("OrderConfirmation", "Mapped status from response: $mappedStatus")
+                                    finalStatusId = mappedStatus
+                                    Log.d("OrderConfirmation", "Set finalStatusId to: $finalStatusId (from API response)")
+
+                                } catch (paymentException: Exception) {
+                                    Log.e("OrderConfirmation", "=== PAYMENT API EXCEPTION ===")
+                                    Log.e("OrderConfirmation", "Payment validation failed with exception: ${paymentException.javaClass.simpleName}")
+                                    Log.e("OrderConfirmation", "Exception message: '${paymentException.message}'")
+                                    Log.e("OrderConfirmation", "Exception stacktrace:", paymentException)
+
+                                    val errorBasedStatus = if (paymentException.message?.contains("insufficient funds", ignoreCase = true) == true) {
+                                        Log.d("OrderConfirmation", "Exception indicates insufficient funds")
+                                        3L // Sin fondos
+                                    } else {
+                                        Log.d("OrderConfirmation", "Exception indicates general decline")
+                                        4L // Denegado
+                                    }
+                                    finalStatusId = errorBasedStatus
+                                    Log.d("OrderConfirmation", "Set finalStatusId to: $finalStatusId (from exception)")
+                                }
+                            }
+                        } else {
+                            Log.d("OrderConfirmation", "=== NON-CARD PAYMENT METHOD ===")
+                            Log.d("OrderConfirmation", "Non-card payment method detected, keeping status as pending (1)")
+                            Log.d("OrderConfirmation", "finalStatusId remains: $finalStatusId")
+                        }
+
+                        Log.d("OrderConfirmation", "=== FINAL PAYMENT PROCESSING RESULT ===")
+                        Log.d("OrderConfirmation", "Final status ID before order creation: $finalStatusId")
+
+                        Log.d("OrderConfirmation", "=== CREATING ORDER ===")
                         val order = Order(
-                            order_id = 0, // El backend asignará el ID
+                            order_id = 0,
                             total = total,
-                            date_order = "", // El backend maneja la fecha
+                            date_order = "",
                             user_id = currentUser?.id ?: 0L,
-                            status_id = 1L, // Estado inicial: pendiente
+                            status_id = finalStatusId,
                             total_products = totalProducts,
                             additional_info_payment_id = selectedPaymentDetail.id
                         )
-                        
-                        // Crear la orden en el backend
+
+                        Log.d("OrderConfirmation", "Order object created with status_id: ${order.status_id}")
+                        Log.d("OrderConfirmation", "Order object: $order")
+
+                        Log.d("OrderConfirmation", "Calling orderViewModel.createOrder...")
                         val createdOrder = orderViewModel.createOrder(order)
+                        Log.d("OrderConfirmation", "=== ORDER CREATED ===")
+                        Log.d("OrderConfirmation", "Created order: $createdOrder")
+                        Log.d("OrderConfirmation", "Created order status_id: ${createdOrder.status_id}")
+
                         createdOrderId = createdOrder.order_id
-                        finalOrderTotal = total // Guardamos el total final
-                        
-                        // Crear los detalles de la orden para todos los productos
+                        finalOrderTotal = total
+                        orderStatus = finalStatusId
+
+                        Log.d("OrderConfirmation", "Set orderStatus to: $orderStatus")
+                        Log.d("OrderConfirmation", "Set createdOrderId to: $createdOrderId")
+
                         cartItems.forEach { item ->
                             val orderProduct = OrderProductDetail(
                                 order_id = createdOrderId ?: 0L,
@@ -349,11 +527,10 @@ fun OrderConfirmationScreen(
                             )
                             orderProductViewModel.createOrderProduct(orderProduct)
                         }
-                        
-                        // Limpiar el carrito y mostrar mensaje de éxito
+
                         cartViewModel.clearCart()
                         showSuccess = true
-                        
+
                     } catch (e: Exception) {
                         Log.e("OrderConfirmation", "Error creando orden", e)
                         coroutineScope.launch {
@@ -428,7 +605,7 @@ fun OrderConfirmationScreen(
 
     if (showSuccess) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showSuccess = false
                 navController.navigate("products") {
                     launchSingleTop = true
@@ -445,10 +622,26 @@ fun OrderConfirmationScreen(
                     contentDescription = null
                 )
             },
-            title = { Text("¡Compra Exitosa!") },
-            text = { 
+            title = {
+                Text(
+                    when (orderStatus) {
+                        2L -> "¡Pago Exitoso!"
+                        3L -> "Pago Rechazado - Fondos Insuficientes"
+                        4L -> "Pago Denegado"
+                        else -> "Orden Creada"
+                    }
+                )
+            },
+            text = {
                 Column {
-                    Text("Tu orden ha sido creada correctamente.")
+                    Text(
+                        when (orderStatus) {
+                            2L -> "Tu pago ha sido procesado exitosamente y tu orden está confirmada."
+                            3L -> "Tu pago fue rechazado por fondos insuficientes. Tu orden está pendiente."
+                            4L -> "Tu pago fue denegado. Tu orden está pendiente."
+                            else -> "Tu orden ha sido creada y está pendiente de procesamiento."
+                        }
+                    )
                     Text(
                         text = "Número de orden: ${createdOrderId}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -459,11 +652,26 @@ fun OrderConfirmationScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 4.dp)
                     )
+                    Text(
+                        text = when (orderStatus) {
+                            2L -> "Estado: Pago Confirmado"
+                            3L -> "Estado: Pendiente - Sin Fondos"
+                            4L -> "Estado: Pendiente - Pago Denegado"
+                            else -> "Estado: Pendiente"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = when (orderStatus) {
+                            2L -> Color(0xFF4CAF50) // Verde para éxito
+                            3L, 4L -> Color(0xFFFF9800) // Naranja para pendiente
+                            else -> Color(0xFFF6E7DF).copy(alpha = 0.7f)
+                        },
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
             },
             confirmButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showSuccess = false
                         navController.navigate("products") {
                             launchSingleTop = true
@@ -479,4 +687,4 @@ fun OrderConfirmationScreen(
             }
         )
     }
-} 
+}
