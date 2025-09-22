@@ -240,7 +240,6 @@ fun ProductScreen(
             )
         }
         
-        // SnackbarHost para feedback
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier

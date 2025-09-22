@@ -50,7 +50,6 @@ fun ProductFormScreen(
     var isEditing by remember { mutableStateOf(productId != 0L) }
     val scrollState = rememberScrollState()
 
-    // Constantes para validación
     val MAX_NAME_LENGTH = 100
     val MAX_DESCRIPTION_LENGTH = 255
     val MAX_IMAGE_URL_LENGTH = 255

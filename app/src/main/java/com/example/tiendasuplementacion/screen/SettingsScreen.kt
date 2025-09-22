@@ -39,7 +39,6 @@ fun SettingsScreen(
     
     val coroutineScope = rememberCoroutineScope()
 
-    // Cargar configuraciones al inicializar
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
             settingViewModel.fetchSettingDetails(settingId)
@@ -50,7 +49,6 @@ fun SettingsScreen(
         settingViewModel.fetchAvailablePaymentMethods()
     }
 
-    // Manejar errores generales
     LaunchedEffect(error) {
         error?.let {
             showNetworkError = true
@@ -85,7 +83,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.padding(16.dp))
 
-            // Solo mostrar los botones de métodos de pago si es un usuario (role_id 1 = user, role_id 2 = admin)
             if (currentUser?.role_id == 1L) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -146,7 +143,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.padding(16.dp))
 
-            // Información personal
             settingDetail?.let { detail ->
                 Card(
                     modifier = Modifier
@@ -187,7 +183,6 @@ fun SettingsScreen(
                 Text("No se encontraron configuraciones", color = Color(0xFFF6E7DF))
             }
 
-            // Dialog para agregar método de pago
             if (showAddPaymentDialog) {
                 AlertDialog(
                     onDismissRequest = { showAddPaymentDialog = false },
@@ -241,7 +236,6 @@ fun SettingsScreen(
                 )
             }
 
-            // Dialog de éxito al agregar método de pago
             if (showSuccessMessage) {
                 AlertDialog(
                     onDismissRequest = { showSuccessMessage = false },
@@ -255,7 +249,6 @@ fun SettingsScreen(
                 )
             }
 
-            // Banner de error de red
             if (showNetworkError) {
                 NetworkErrorBanner(
                     message = networkErrorMessage,
