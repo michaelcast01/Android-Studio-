@@ -1,5 +1,7 @@
 package com.example.tiendasuplementacion.screen
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +29,7 @@ import com.example.tiendasuplementacion.model.UserDetail
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun AdminClientsScreen(
     navController: NavController,
@@ -119,55 +121,61 @@ fun AdminClientsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(filtered, key = { it.id }) { userDetail ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                elevation = CardDefaults.cardElevation(4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF26272B)
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                onClick = { selectedUser = userDetail }
+                            this@Column.AnimatedVisibility(
+                                visible = true,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
                             ) {
-                                Row(
+                                Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                        .padding(vertical = 4.dp),
+                                    elevation = CardDefaults.cardElevation(4.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF26272B)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    onClick = { selectedUser = userDetail }
                                 ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = userDetail.username,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = Color(0xFFF6E7DF),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = userDetail.email,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
-                                        )
-                                        userDetail.settings?.let { settings ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Tel: ${settings.phone}",
+                                                text = userDetail.username,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = Color(0xFFF6E7DF),
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = userDetail.email,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
                                             )
+                                            userDetail.settings?.let { settings ->
+                                                Text(
+                                                    text = "Tel: ${settings.phone}",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = Color(0xFFF6E7DF).copy(alpha = 0.7f)
+                                                )
+                                            }
                                         }
-                                    }
 
-                                    // Contador rápido de pedidos
-                                    val ordersCount = userDetail.orders.size
-                                    Column(
-                                        horizontalAlignment = Alignment.End
-                                    ) {
-                                        Text(text = "Pedidos: $ordersCount", color = Color(0xFFF6E7DF))
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        // Botones rápidos: ver historial (dialog) y editar/ir a producto
-                                        Row {
-                                            TextButton(onClick = { selectedUser = userDetail }) {
-                                                Text("Ver historial")
+                                        // Contador rápido de pedidos
+                                        val ordersCount = userDetail.orders.size
+                                        Column(
+                                            horizontalAlignment = Alignment.End
+                                        ) {
+                                            Text(text = "Pedidos: $ordersCount", color = Color(0xFFF6E7DF))
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            // Botones rápidos: ver historial (dialog) y editar/ir a producto
+                                            Row {
+                                                TextButton(onClick = { selectedUser = userDetail }) {
+                                                    Text("Ver historial")
+                                                }
                                             }
                                         }
                                     }
@@ -190,7 +198,11 @@ fun AdminClientsScreen(
                 }
             }
 
-        if (showNetworkError) {
+        AnimatedVisibility(
+            visible = showNetworkError,
+            enter = fadeIn(animationSpec = tween(500)),
+            exit = fadeOut(animationSpec = tween(500))
+        ) {
             NetworkErrorBanner(
                 message = networkErrorMessage,
                 onRetry = {

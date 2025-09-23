@@ -16,7 +16,7 @@ object RetrofitClient {
 
     // Configuraci9n de la URL base (dev por defecto)
     private const val BASE_URL = "http://10.0.2.2:8080/" // Asegrate de que termine con /
-    private const val TIMEOUT_SECONDS = 30L // 30 segundos de timeout
+    private const val TIMEOUT_SECONDS = 15L // Reducido de 30 segundos a 15 segundos para redes rápidas
     private const val HTTP_CACHE_SIZE: Long = 10L * 1024L * 1024L // 10 MB
 
     // Interceptor de logging, controlado por BuildConfig.LOGGING_ENABLED

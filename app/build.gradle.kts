@@ -110,6 +110,7 @@ dependencies {
     // PDF Generation
     implementation(libs.itext7.core)
     implementation(libs.html2pdf)
+    implementation(libs.androidx.compose.animation)
 
     // Testing
     testImplementation(libs.junit)

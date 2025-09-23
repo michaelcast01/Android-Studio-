@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Mantener las clases necesarias para Retrofit
+-keep class retrofit2.** { *; }
+-keepattributes Signature
+
+# Excluir clases innecesarias
+-dontwarn okhttp3.internal.platform.**
+-dontwarn javax.annotation.**
+
+# Proteger el código
+-obfuscate
