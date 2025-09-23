@@ -41,8 +41,8 @@ fun AdminClientsScreen(
     var selectedUser by remember { mutableStateOf<UserDetail?>(null) }
 
     LaunchedEffect(Unit) {
-        // Cargar usuarios con role_id = 2 (clientes/usuarios)
-        userDetailViewModel.fetchUserDetailsByRole(2L)
+        // Cargar usuarios con role_id = 1 (clientes/usuarios)
+        userDetailViewModel.fetchUserDetailsByRole(1L)
     }
 
     LaunchedEffect(error) {
@@ -195,7 +195,7 @@ fun AdminClientsScreen(
                 message = networkErrorMessage,
                 onRetry = {
                     showNetworkError = false
-                    userDetailViewModel.fetchUserDetailsByRole(2L)
+                    userDetailViewModel.fetchUserDetailsByRole(1L)
                 },
                 onDismiss = { showNetworkError = false }
             )
@@ -310,4 +310,4 @@ fun AdminClientsScreen(
             )
         }
     }
-} 
+}
