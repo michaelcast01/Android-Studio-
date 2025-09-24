@@ -89,17 +89,19 @@ fun OrderScreen(
         }
     }
 
+    val backgroundBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF23242A), // Fondo oscuro
+                Color(0xFF23242A)
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF23242A), // Fondo oscuro
-                        Color(0xFF23242A)
-                    )
-                )
-            )
+            .background(backgroundBrush)
     ) {
         Column(
             modifier = Modifier
@@ -420,29 +422,33 @@ fun OrderScreen(
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            SubcomposeAsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(product.url_image)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = product.name,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                            ) {
-                                val state = painter.state
-                                when (state) {
-                                    is AsyncImagePainter.State.Loading -> ShimmerPlaceholder(modifier = Modifier.fillMaxSize())
-                                    is AsyncImagePainter.State.Error -> {
-                                        Image(
-                                            painter = painterResource(R.drawable.placeholder),
-                                            contentDescription = product.name,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
+                                    val smallImageRequest = remember(product.url_image) {
+                                        ImageRequest.Builder(context)
+                                            .data(product.url_image)
+                                            .crossfade(true)
+                                            .build()
                                     }
-                                    else -> SubcomposeAsyncImageContent()
-                                }
-                            }
+
+                                    SubcomposeAsyncImage(
+                                        model = smallImageRequest,
+                                        contentDescription = product.name,
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(4.dp))
+                                    ) {
+                                        val state = painter.state
+                                        when (state) {
+                                            is AsyncImagePainter.State.Loading -> ShimmerPlaceholder(modifier = Modifier.fillMaxSize())
+                                            is AsyncImagePainter.State.Error -> {
+                                                Image(
+                                                    painter = painterResource(R.drawable.placeholder),
+                                                    contentDescription = product.name,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                            }
+                                            else -> SubcomposeAsyncImageContent()
+                                        }
+                                    }
                             Spacer(modifier = Modifier.width(8.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(

@@ -57,6 +57,16 @@ fun SettingsScreen(
     
     val coroutineScope = rememberCoroutineScope()
 
+    // Memoized background brush to avoid recreating on each recomposition
+    val backgroundBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF23242A),
+                Color(0xFF23242A)
+            )
+        )
+    }
+
     // Cargar configuraciones al inicializar
     LaunchedEffect(currentUser?.setting_id) {
         currentUser?.setting_id?.let { settingId ->
@@ -174,14 +184,7 @@ fun SettingsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF23242A),
-                        Color(0xFF23242A)
-                    )
-                )
-            )
+            .background(backgroundBrush)
     ) {
         Column(
             modifier = Modifier
@@ -468,11 +471,13 @@ fun SettingsScreen(
                             Text("Selecciona un método de pago para agregar:")
                             Spacer(modifier = Modifier.padding(8.dp))
 
-                            val currentPaymentIds =
+                            val currentPaymentIds = remember(settingDetail) {
                                 settingDetail?.payments?.map { it.id } ?: emptyList()
-                            val availableToAdd =
-                                availablePayments?.filter { it.id !in currentPaymentIds }
-                                    ?: emptyList()
+                            }
+
+                            val availableToAdd = remember(availablePayments, currentPaymentIds) {
+                                availablePayments?.filter { it.id !in currentPaymentIds } ?: emptyList()
+                            }
 
                             if (availableToAdd.isEmpty()) {
                                 Text("No hay métodos de pago disponibles para agregar")

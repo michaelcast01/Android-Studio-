@@ -64,7 +64,15 @@ fun ProductScreen(
     categoryViewModel: CategoryViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val imageLoader = ImageLoader.Builder(context).build()
+    val imageLoader = remember(context) { ImageLoader.Builder(context).build() }
+    val backgroundBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF23242A),
+                Color(0xFF23242A)
+            )
+        )
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
@@ -97,14 +105,7 @@ fun ProductScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF23242A),
-                        Color(0xFF23242A)
-                    )
-                )
-            )
+            .background(backgroundBrush)
     ) {
         Column(
             modifier = Modifier
@@ -147,13 +148,13 @@ fun ProductScreen(
                     }
                 }
                 is com.example.tiendasuplementacion.viewmodel.UiState.Success -> {
-                    val list = (productsUiState as com.example.tiendasuplementacion.viewmodel.UiState.Success).data
+                    val list = (productsUiState as com.example.tiendasuplementacion.viewmodel.UiState.Success).data as List<Product>
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        items(list, key = { it.id }) { product ->
+                            items(items = list, key = { it.id }) { product: Product ->
                             ProductCard(
                                 product = product,
                                 onAddToCart = {
@@ -260,10 +261,13 @@ fun ProductCard(
     imageLoader: ImageLoader
 ) {
     val isOutOfStock = product.stock <= 0
-    val categoryProduct = categoryProducts.find { it.product_id == product.id }
-    val category = categoryProduct?.let { cp ->
-        categories.find { it.id == cp.category_id }
+    val categoryProduct = remember(categoryProducts, product.id) { categoryProducts.find { it.product_id == product.id } }
+    val category = remember(categoryProduct, categories) {
+        categoryProduct?.let { cp ->
+            categories.find { it.id == cp.category_id }
+        }
     }
+    val ctx = LocalContext.current
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showProductDetails by remember { mutableStateOf(false) }
     var isAdding by remember { mutableStateOf(false) }
@@ -302,11 +306,13 @@ fun ProductCard(
                 Column(
                     modifier = Modifier.padding(8.dp)
                 ) {
+                    val detailImageRequest = ImageRequest.Builder(ctx)
+                        .data(product.url_image)
+                        .crossfade(true)
+                        .build()
+
                     SubcomposeAsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(product.url_image)
-                            .crossfade(true)
-                            .build(),
+                        model = detailImageRequest,
                         imageLoader = imageLoader,
                         contentDescription = product.name,
                         modifier = Modifier
@@ -379,7 +385,7 @@ fun ProductCard(
             modifier = Modifier.padding(16.dp)
         ) {
             SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
+                model = ImageRequest.Builder(ctx)
                     .data(product.url_image)
                     .crossfade(true)
                     .build(),

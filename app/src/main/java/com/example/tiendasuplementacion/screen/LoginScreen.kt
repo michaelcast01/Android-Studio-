@@ -75,6 +75,10 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
+    val primaryBg = remember { Color(0xFF26272B) }
+    val primaryText = remember { Color(0xFFF6E7DF) }
+    val warnColor = remember { Color(0xFFFF9800) }
+
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val error by authViewModel.error.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -211,7 +215,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF26272B)),
+            .background(primaryBg),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -241,7 +245,7 @@ fun LoginScreen(
                 Text(
                     text = if (isRegistering) "Registro" else "DiamondSuplements",
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFFF6E7DF)
+                    color = primaryText
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 

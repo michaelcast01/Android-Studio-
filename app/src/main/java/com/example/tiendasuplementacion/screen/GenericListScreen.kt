@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -22,12 +23,14 @@ fun <T> GenericListScreen(
     onCreateClick: () -> Unit,
     itemContent: @Composable (T) -> Unit
 ) {
+    val primaryText = remember { Color(0xFFF6E7DF) }
+    val topBarBg = remember { Color(0xFF18191C) }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(title, color = Color(0xFFF6E7DF)) },
+                title = { Text(title, color = primaryText) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF18191C)
+                    containerColor = topBarBg
                 )
             )
         },
@@ -38,7 +41,7 @@ fun <T> GenericListScreen(
         }
     ) { paddingValues ->
         LazyColumn(contentPadding = paddingValues) {
-            items(items) { item ->
+            items(items, key = { it?.hashCode() ?: 0 }) { item ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
