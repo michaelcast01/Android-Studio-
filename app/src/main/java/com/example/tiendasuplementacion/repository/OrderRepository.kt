@@ -3,23 +3,23 @@ package com.example.tiendasuplementacion.repository
 import com.example.tiendasuplementacion.model.Order
 import com.example.tiendasuplementacion.network.RetrofitClient
 
-class OrderRepository {
-    private val service = RetrofitClient.orderService
+open class OrderRepository {
+    private val service by lazy { RetrofitClient.orderService }
 
-    suspend fun getAll() = service.getAll()
-    suspend fun getById(id: Long) = service.getById(id)
-    suspend fun create(order: Order) = service.create(order)
-    suspend fun update(id: Long, order: Order) = service.update(id, order)
-    suspend fun delete(id: Long) = service.delete(id)
+    open suspend fun getAll() = service.getAll()
+    open suspend fun getById(id: Long) = service.getById(id)
+    open suspend fun create(order: Order) = service.create(order)
+    open suspend fun update(id: Long, order: Order) = service.update(id, order)
+    open suspend fun delete(id: Long) = service.delete(id)
 
     // Admin helpers
-    suspend fun updateStatus(id: Long, statusId: Long) = service.updateStatus(id, mapOf("status_id" to statusId))
-    suspend fun refund(id: Long, amount: Double?, reason: String?) = service.refund(id, mapOf("amount" to (amount ?: 0.0), "reason" to (reason ?: "")))
-    suspend fun assignTracking(id: Long, tracking: String) = service.assignTracking(id, mapOf("tracking" to tracking))
+    open suspend fun updateStatus(id: Long, statusId: Long) = service.updateStatus(id, mapOf("status_id" to statusId))
+    open suspend fun refund(id: Long, amount: Double?, reason: String?) = service.refund(id, mapOf("amount" to (amount ?: 0.0), "reason" to (reason ?: "")))
+    open suspend fun assignTracking(id: Long, tracking: String) = service.assignTracking(id, mapOf("tracking" to tracking))
 
     // Paged fetch: if the backend supports page/size params this should call that endpoint.
     // Fallback: fetch all and slice client-side (only for small datasets).
-    suspend fun getPaged(page: Int, size: Int, statusId: Long? = null, search: String? = null): List<Order> {
+    open suspend fun getPaged(page: Int, size: Int, statusId: Long? = null, search: String? = null): List<Order> {
         return try {
             // Try calling service.getAll with params if signature supports it (not implemented in interface by default)
             // Fallback to client-side slicing

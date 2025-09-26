@@ -111,6 +111,7 @@ dependencies {
     implementation(libs.itext7.core)
     implementation(libs.html2pdf)
     implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.material3)
 
     // Testing
     testImplementation(libs.junit)
@@ -121,11 +122,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     // Paging 3
-    implementation("androidx.paging:paging-runtime:3.1.1")
-    implementation("androidx.paging:paging-compose:1.0.0-alpha20")
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
     // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(libs.androidx.datastore.preferences.v100)
     // Coil optimized
-    implementation("io.coil-kt:coil:2.4.0")
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation(libs.coil)
+    implementation(libs.coil.compose)
 }

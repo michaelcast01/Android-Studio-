@@ -1,27 +1,25 @@
 package com.example.tiendasuplementacion.screen
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.tiendasuplementacion.model.Order
-import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import androidx.paging.LoadState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.ui.platform.LocalContext
-import com.example.tiendasuplementacion.util.ExportUtils
-import kotlinx.coroutines.launch
-import android.util.Log
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.example.tiendasuplementacion.component.ShimmerPlaceholder
+import com.example.tiendasuplementacion.model.Order
+import com.example.tiendasuplementacion.util.ExportUtils
+import com.example.tiendasuplementacion.viewmodel.OrderViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +77,12 @@ fun AdminOrdersScreen(
                 }
             }
             
-            items(pagedItems) { order ->
+            items(
+                count = pagedItems.itemCount,
+                key = pagedItems.itemKey { it.order_id },
+                contentType = pagedItems.itemContentType { "order" }
+            ) { index ->
+                val order = pagedItems[index]
                 if (order == null) {
                     // Placeholder while loading
                     ShimmerPlaceholder(

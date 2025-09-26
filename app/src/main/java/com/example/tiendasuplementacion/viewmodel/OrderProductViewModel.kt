@@ -2,8 +2,13 @@ package com.example.tiendasuplementacion.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tiendasuplementacion.model.CreateOrderProductRequest
 import com.example.tiendasuplementacion.model.OrderProductDetail
+import com.example.tiendasuplementacion.model.UpdateOrderProductRequest
 import com.example.tiendasuplementacion.repository.OrderProductRepository
+import com.example.tiendasuplementacion.utils.OrderProductError
+import com.example.tiendasuplementacion.utils.OrderProductErrorHandler
+import com.example.tiendasuplementacion.utils.toOrderProductError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -11,17 +16,114 @@ import kotlinx.coroutines.launch
 class OrderProductViewModel : ViewModel() {
     private val repository = OrderProductRepository()
     
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+    private val _error = MutableStateFlow<OrderProductError?>(null)
+    val error: StateFlow<OrderProductError?> = _error
 
-    fun createOrderProduct(orderProduct: OrderProductDetail) {
-        viewModelScope.launch {
-            try {
-                repository.create(orderProduct)
-                _error.value = null
-            } catch (e: Exception) {
-                _error.value = "Error al crear el detalle de la orden: ${e.message}"
-            }
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading
+
+    private val _orderProduct = MutableStateFlow<OrderProductDetail?>(null)
+    val orderProduct: StateFlow<OrderProductDetail?> = _orderProduct
+
+    /**
+     * Crea un nuevo detalle de pedido.
+     * El backend automáticamente reduce el stock del producto.
+     */
+    suspend fun createOrderProduct(request: CreateOrderProductRequest): OrderProductDetail? {
+        return try {
+            _loading.value = true
+            _error.value = null
+            
+            val result = repository.create(request)
+            _orderProduct.value = result
+            result
+        } catch (e: Exception) {
+            _error.value = e.toOrderProductError()
+            null
+        } finally {
+            _loading.value = false
         }
+    }
+
+    /**
+     * Actualiza un detalle de pedido existente.
+     * El backend ajusta automáticamente el stock por la diferencia.
+     */
+    suspend fun updateOrderProduct(id: Long, request: UpdateOrderProductRequest): OrderProductDetail? {
+        return try {
+            _loading.value = true
+            _error.value = null
+            
+            val result = repository.update(id, request)
+            _orderProduct.value = result
+            result
+        } catch (e: Exception) {
+            _error.value = e.toOrderProductError()
+            null
+        } finally {
+            _loading.value = false
+        }
+    }
+
+    /**
+     * Elimina un detalle de pedido.
+     * El backend automáticamente restaura el stock sumando la cantidad.
+     */
+    suspend fun deleteOrderProduct(id: Long): Boolean {
+        return try {
+            _loading.value = true
+            _error.value = null
+            
+            val success = repository.delete(id)
+            if (success) {
+                _orderProduct.value = null
+            }
+            success
+        } catch (e: Exception) {
+            _error.value = e.toOrderProductError()
+            false
+        } finally {
+            _loading.value = false
+        }
+    }
+
+    /**
+     * Obtiene un detalle de pedido por su ID.
+     */
+    suspend fun getOrderProduct(id: Long): OrderProductDetail? {
+        return try {
+            _loading.value = true
+            _error.value = null
+            
+            val result = repository.getById(id)
+            _orderProduct.value = result
+            result
+        } catch (e: Exception) {
+            _error.value = e.toOrderProductError()
+            null
+        } finally {
+            _loading.value = false
+        }
+    }
+
+    /**
+     * Actualiza solo la cantidad de un detalle de pedido.
+     */
+    suspend fun updateQuantity(id: Long, newQuantity: Int): OrderProductDetail? {
+        return updateOrderProduct(id, UpdateOrderProductRequest(quantity = newQuantity))
+    }
+
+    /**
+     * Limpia los errores.
+     */
+    fun clearError() {
+        _error.value = null
+    }
+
+    /**
+     * Limpia el estado del order product.
+     */
+    fun clearOrderProduct() {
+        _orderProduct.value = null
     }
 } 

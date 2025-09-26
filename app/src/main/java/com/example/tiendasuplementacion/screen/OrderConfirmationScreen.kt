@@ -22,6 +22,7 @@ import com.example.tiendasuplementacion.model.Order
 import com.example.tiendasuplementacion.viewmodel.OrderViewModel
 import com.example.tiendasuplementacion.viewmodel.OrderProductViewModel
 import com.example.tiendasuplementacion.model.OrderProductDetail
+import com.example.tiendasuplementacion.model.CreateOrderProductRequest
 import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.model.TestPaymentRequest
 import com.example.tiendasuplementacion.model.TestTokens
@@ -519,13 +520,16 @@ fun OrderConfirmationScreen(
                         Log.d("OrderConfirmation", "Set createdOrderId to: $createdOrderId")
 
                         cartItems.forEach { item ->
-                            val orderProduct = OrderProductDetail(
+                            val orderProductRequest = com.example.tiendasuplementacion.model.CreateOrderProductRequest(
                                 order_id = createdOrderId ?: 0L,
                                 product_id = item.product.id,
                                 quantity = item.quantity,
                                 price = item.product.price
                             )
-                            orderProductViewModel.createOrderProduct(orderProduct)
+                            // Usar coroutine para llamar a la función suspendida
+                            launch {
+                                orderProductViewModel.createOrderProduct(orderProductRequest)
+                            }
                         }
 
                         cartViewModel.clearCart()

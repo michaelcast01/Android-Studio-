@@ -24,13 +24,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.viewmodel.ProductViewModel
