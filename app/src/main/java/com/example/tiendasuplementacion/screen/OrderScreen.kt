@@ -25,7 +25,6 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import com.example.tiendasuplementacion.R
@@ -37,13 +36,13 @@ import androidx.core.content.FileProvider
 import com.example.tiendasuplementacion.util.PdfGenerator
 import java.io.File
 import android.content.Intent
-import android.widget.Toast
 import android.util.Log
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import com.example.tiendasuplementacion.util.CurrencyFormatter
 import kotlinx.coroutines.launch
+import com.example.tiendasuplementacion.repository.OrderProductRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +64,9 @@ fun OrderScreen(
     var selectedOrder by remember { mutableStateOf<UserOrder?>(null) }
     var showOrderDetails by remember { mutableStateOf(false) }
     var isProcessingPdf by remember { mutableStateOf(false) }
+
+    // Instancia del repositorio para PDF
+    val orderProductRepository = remember { OrderProductRepository() }
 
     LaunchedEffect(currentUser?.id) {
         currentUser?.id?.let { userId ->
@@ -322,22 +324,30 @@ fun OrderScreen(
     }
 
     if (showOrderDetails && selectedOrder != null) {
-        // Generate PDF safely when showing order details
-        val pdfPath = remember(selectedOrder) {
+        // Generate PDF with proper coroutine handling
+        var pdfPath by remember(selectedOrder) { mutableStateOf("") }
+        var isGeneratingPdf by remember(selectedOrder) { mutableStateOf(false) }
+        
+        LaunchedEffect(selectedOrder) {
             selectedOrder?.let { order ->
+                isGeneratingPdf = true
                 try {
-                    PdfGenerator.generateInvoicePdf(context, order)
+                    pdfPath = PdfGenerator.generateInvoicePdfWithDetails(
+                        context,
+                        order,
+                        orderProductRepository
+                    )
                 } catch (e: Exception) {
                     Log.e("OrderScreen", "Error generating PDF", e)
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = "Error al generar la factura PDF",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                    ""
+                    snackbarHostState.showSnackbar(
+                        message = "Error al generar la factura PDF",
+                        duration = SnackbarDuration.Short
+                    )
+                    pdfPath = ""
+                } finally {
+                    isGeneratingPdf = false
                 }
-            } ?: ""
+            }
         }
 
         val pdfUri = remember(pdfPath) {
@@ -476,57 +486,24 @@ fun OrderScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    if (pdfUri != null) {
-                        // PDF generado correctamente
-                        Button(
-                            onClick = {
-                                isProcessingPdf = true
+                    // Botón unificado para PDF
+                    Button(
+                        onClick = {
+                            isProcessingPdf = true
+                            coroutineScope.launch {
                                 try {
-                                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(pdfUri, "application/pdf")
-                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    Log.e("OrderScreen", "Error opening PDF", e)
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            message = "No se encontró una aplicación para abrir PDFs",
-                                            duration = SnackbarDuration.Long
-                                        )
-                                    }
-                                } finally {
-                                    isProcessingPdf = false
-                                }
-                            },
-                            enabled = !isProcessingPdf,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3F51B5)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (isProcessingPdf) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Abriendo...")
-                            } else {
-                                Text("Ver Factura PDF")
-                            }
-                        }
-                    } else {
-                        // Error en la generación del PDF o aún generando
-                        OutlinedButton(
-                            onClick = {
-                                isProcessingPdf = true
-                                coroutineScope.launch {
-                                    try {
+                                    if (pdfUri != null) {
+                                        // Si ya existe el PDF, abrirlo directamente
+                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                            setDataAndType(pdfUri, "application/pdf")
+                                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        }
+                                        context.startActivity(intent)
+                                    } else {
+                                        // Generar el PDF y luego abrirlo
                                         selectedOrder?.let { order ->
-                                            val newPdfPath = PdfGenerator.generateInvoicePdf(context, order)
-                                                if (newPdfPath.isNotEmpty()) {
+                                            val newPdfPath = PdfGenerator.generateInvoicePdfWithDetails(context, order, orderProductRepository)
+                                            if (newPdfPath.isNotEmpty()) {
                                                 val newPdfUri = FileProvider.getUriForFile(
                                                     context,
                                                     "${context.packageName}.fileprovider",
@@ -544,40 +521,35 @@ fun OrderScreen(
                                                 )
                                             }
                                         }
-                                    } catch (e: Exception) {
-                                        Log.e("OrderScreen", "Error generating/opening PDF", e)
-                                        snackbarHostState.showSnackbar(
-                                            message = "Error al generar o abrir la factura PDF",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                    } finally {
-                                        isProcessingPdf = false
                                     }
+                                } catch (e: Exception) {
+                                    Log.e("OrderScreen", "Error with PDF", e)
+                                    snackbarHostState.showSnackbar(
+                                        message = "Error al procesar la factura PDF",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                } finally {
+                                    isProcessingPdf = false
                                 }
-                            },
-                            enabled = !isProcessingPdf,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (isProcessingPdf) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Generando PDF...")
-                            } else {
-                                Text("Generar y Ver Factura PDF")
                             }
+                        },
+                        enabled = !isProcessingPdf,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF3F51B5)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isProcessingPdf) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (pdfUri != null) "Abriendo..." else "Generando PDF...")
+                        } else {
+                            Text("Ver Factura PDF")
                         }
-                        
-                        // Mensaje explicativo
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "La factura PDF se generará al hacer clic en el botón",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            modifier = Modifier.fillMaxWidth()
-                        )
                     }
                 }
             },

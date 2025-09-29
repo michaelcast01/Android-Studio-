@@ -12,6 +12,8 @@ import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.example.tiendasuplementacion.model.UserOrder
 import com.example.tiendasuplementacion.model.OrderProduct
+import com.example.tiendasuplementacion.model.OrderProductDetail
+import com.example.tiendasuplementacion.model.Product
 import java.io.File
 import java.text.NumberFormat
 import java.util.*
@@ -19,7 +21,22 @@ import com.itextpdf.kernel.font.PdfFontFactory
 import com.itextpdf.layout.borders.Border
 
 object PdfGenerator {
-    fun generateInvoicePdf(context: Context, order: UserOrder): String {
+    suspend fun generateInvoicePdfWithDetails(
+        context: Context,
+        order: UserOrder,
+        orderProductRepository: com.example.tiendasuplementacion.repository.OrderProductRepository
+    ): String {
+        // Obtener los detalles de la orden desde el repositorio
+        val orderDetails = try {
+            orderProductRepository.getByOrderId(order.order_id)
+        } catch (e: Exception) {
+            emptyList<OrderProductDetail>()
+        }
+        
+        return generateInvoicePdf(context, order, orderDetails)
+    }
+
+    fun generateInvoicePdf(context: Context, order: UserOrder, orderDetails: List<OrderProductDetail> = emptyList()): String {
         try {
             // Crear el directorio si no existe
             val directory = File(context.getExternalFilesDir(null), "facturas")
@@ -139,15 +156,33 @@ object PdfGenerator {
             var subtotalSinIva = 0.0
             var ivaTotal = 0.0
 
-            // Agrupar productos por nombre y contar cantidades
-            val productosAgrupados = order.products
-                .groupBy { "${it.id}_${it.name}_${it.price}" } // Agrupar por una clave única
-                .map { entry ->
+            // Usar los detalles de la orden si están disponibles
+            val productosAgrupados = if (orderDetails.isNotEmpty()) {
+                // Usar los detalles reales con cantidades correctas
+                orderDetails.map { detail ->
                     ProductoAgrupado(
-                        producto = entry.value.first(),
-                        cantidad = entry.value.size // Contar cuántas veces aparece el producto
+                        producto = detail.product,
+                        cantidad = detail.quantity
                     )
                 }
+            } else {
+                // Fallback: agrupar productos por conteo
+                order.products.groupBy { it.id }
+                    .map { (_, products) ->
+                        val orderProduct = products.first()
+                        ProductoAgrupado(
+                            producto = Product(
+                                id = orderProduct.id,
+                                name = orderProduct.name,
+                                description = orderProduct.description,
+                                price = orderProduct.price,
+                                stock = orderProduct.stock,
+                                url_image = orderProduct.url_image
+                            ),
+                            cantidad = products.size
+                        )
+                    }
+            }
 
             // Procesar cada producto agrupado
             productosAgrupados.forEach { productoAgrupado ->
@@ -229,6 +264,6 @@ object PdfGenerator {
 }
 
 private data class ProductoAgrupado(
-    val producto: OrderProduct,
+    val producto: com.example.tiendasuplementacion.model.Product,
     val cantidad: Int
 ) 

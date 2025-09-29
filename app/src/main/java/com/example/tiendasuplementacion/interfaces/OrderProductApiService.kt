@@ -18,4 +18,7 @@ interface OrderProductApiService {
 
     @GET("/api/order-products/{id}")
     suspend fun getById(@Path("id") id: Long): OrderProductDetail
+
+    @GET("/api/order-products/order/{orderId}")
+    suspend fun getByOrderId(@Path("orderId") orderId: Long): List<OrderProductDetail>
 } 

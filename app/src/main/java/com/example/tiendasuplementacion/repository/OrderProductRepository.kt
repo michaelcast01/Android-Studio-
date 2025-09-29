@@ -24,4 +24,8 @@ class OrderProductRepository {
     suspend fun getById(id: Long): OrderProductDetail {
         return service.getById(id)
     }
+
+    suspend fun getByOrderId(orderId: Long): List<OrderProductDetail> {
+        return service.getByOrderId(orderId)
+    }
 } 
