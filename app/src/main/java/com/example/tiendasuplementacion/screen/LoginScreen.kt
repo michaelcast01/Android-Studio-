@@ -36,6 +36,7 @@ import com.example.tiendasuplementacion.util.EnvConfig
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.util.Log
+import androidx.compose.ui.text.input.VisualTransformation
 import kotlinx.serialization.Serializable
 import java.io.Serializable as JavaSerializable
 
@@ -383,6 +384,8 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                var passwordVisible by remember { mutableStateOf(false) }
+
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -390,7 +393,16 @@ fun LoginScreen(
                     leadingIcon = {
                         Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFF6E7DF))
                     },
-                    visualTransformation = PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                tint = Color(0xFFF6E7DF)
+                            )
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     shape = RoundedCornerShape(12.dp),
