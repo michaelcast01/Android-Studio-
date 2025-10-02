@@ -60,7 +60,7 @@ fun AppNavGraph(
         NavBarItem("cart", "Carrito", Icons.Default.ShoppingCart),
         NavBarItem("payments", "Pagos", Icons.Default.Payment),
         NavBarItem("orders", "Historial", Icons.AutoMirrored.Filled.List),
-        NavBarItem("settings", "Configuraciones", Icons.Default.Settings)
+        NavBarItem("settings", "Perfil", Icons.Default.Settings)
     )
 
     val baseItemsAdmin = listOf(
