@@ -85,9 +85,9 @@ fun AdminClientsScreen(
     navController: NavController,
     userDetailViewModel: UserDetailViewModel = viewModel()
 ) {
-    val userDetailsList by userDetailViewModel.userDetailsList.observeAsState(emptyList())
-    val isLoading by userDetailViewModel.isLoading.observeAsState(false)
-    val error by userDetailViewModel.error.observeAsState()
+    val userDetailsList by userDetailViewModel.userDetailsList.collectAsState(initial = emptyList())
+    val isLoading by userDetailViewModel.isLoading.collectAsState(initial = false)
+    val error by userDetailViewModel.error.collectAsState(initial = null)
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var selectedUser by remember { mutableStateOf<UserDetail?>(null) }

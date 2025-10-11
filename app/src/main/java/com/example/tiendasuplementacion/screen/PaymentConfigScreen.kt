@@ -45,7 +45,7 @@ fun PaymentConfigScreen(
     
     val currentUser by authViewModel.currentUser.collectAsState()
     val scrollState = rememberScrollState()
-    val payments by viewModel.payments.observeAsState(emptyList())
+    val payments by viewModel.payments.collectAsState(initial = emptyList())
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }

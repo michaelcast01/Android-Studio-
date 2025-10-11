@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -31,9 +30,9 @@ import com.example.tiendasuplementacion.util.CurrencyFormatter
 fun OrderDetailScreen(navController: NavController, viewModel: OrderDetailViewModel = viewModel()) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val details by viewModel.details.observeAsState(emptyList())
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
+    val details by viewModel.details.collectAsState(initial = emptyList())
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val error by viewModel.error.collectAsState(initial = null)
     var isGeneratingQR by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {

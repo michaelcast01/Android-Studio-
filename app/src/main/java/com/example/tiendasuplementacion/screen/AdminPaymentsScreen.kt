@@ -32,9 +32,9 @@ fun AdminPaymentsScreen(
     navController: NavController,
     viewModel: PaymentViewModel = viewModel()
 ) {
-    val payments by viewModel.payments.observeAsState(emptyList())
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
+    val payments by viewModel.payments.collectAsState(initial = emptyList())
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val error by viewModel.error.collectAsState(initial = null)
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var showAddPaymentDialog by remember { mutableStateOf(false) }

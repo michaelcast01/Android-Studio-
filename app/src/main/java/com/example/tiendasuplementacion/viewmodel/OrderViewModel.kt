@@ -23,8 +23,8 @@ import java.time.format.DateTimeParseException
 
 class OrderViewModel : ViewModel() {
     private val repository = OrderRepository()
-    private val _orders = MutableLiveData<List<Order>>()
-    val orders: LiveData<List<Order>> = _orders
+    private val _orders = MutableStateFlow<List<Order>>(emptyList())
+    val orders: StateFlow<List<Order>> = _orders.asStateFlow()
 
     private val _uiState = MutableStateFlow<UiState<List<Order>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Order>>> = _uiState.asStateFlow()
@@ -76,7 +76,7 @@ class OrderViewModel : ViewModel() {
     fun updateOrderStatusOptimistic(orderId: Long, newStatusId: Long) {
         viewModelScope.launch {
             // optimistic update in LiveData list
-            val current = _orders.value ?: emptyList()
+            val current = _orders.value
             val updated = current.map { if (it.order_id == orderId) it.copy(status_id = newStatusId) else it }
             _orders.value = updated
 
@@ -94,7 +94,7 @@ class OrderViewModel : ViewModel() {
             try {
                 val updated = withContext(Dispatchers.IO) { repository.refund(orderId, amount, reason) }
                 // replace in list
-                val current = _orders.value ?: emptyList()
+                val current = _orders.value
                 _orders.value = current.map { if (it.order_id == orderId) updated else it }
                 onResult?.invoke(true, null)
             } catch (e: Exception) {
@@ -107,7 +107,7 @@ class OrderViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val updated = withContext(Dispatchers.IO) { repository.assignTracking(orderId, tracking) }
-                val current = _orders.value ?: emptyList()
+                val current = _orders.value
                 _orders.value = current.map { if (it.order_id == orderId) updated else it }
                 onResult?.invoke(true, null)
             } catch (e: Exception) {

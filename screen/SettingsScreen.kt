@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -26,37 +26,17 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen(
-    navController: NavController,
-    settingViewModel: SettingViewModel = viewModel(),
-    authViewModel: AuthViewModel = viewModel()
-) {
-    val currentUser by authViewModel.currentUser.collectAsState()
-    val settingDetail by settingViewModel.settingDetail.observeAsState()
-    val availablePayments by settingViewModel.availablePayments.observeAsState()
-    val error by settingViewModel.error.observeAsState()
-    
-    // Estados para verificación de email - removed problematic observeAsState calls
-    // These will be handled differently until the ViewModel properties are available
-    
-    var showNetworkError by remember { mutableStateOf(false) }
-    var networkErrorMessage by remember { mutableStateOf("") }
-    var showPaymentMethods by remember { mutableStateOf(false) }
-    var showAddPaymentDialog by remember { mutableStateOf(false) }
-    var isAddingPayment by remember { mutableStateOf(false) }
-    var showSuccessMessage by remember { mutableStateOf(false) }
-    var addedPaymentName by remember { mutableStateOf("") }
-    
-    // Estados para UI de verificación
-    var isEmailVerifying by remember { mutableStateOf(false) }
-    var showVerificationResult by remember { mutableStateOf(false) }
-    var verificationMessage by remember { mutableStateOf("") }
-    var currentVerificationId by remember { mutableStateOf<String?>(null) }
-    var emailVerificationStatus by remember { mutableStateOf<String?>(null) }
-    
-    val coroutineScope = rememberCoroutineScope()
-
+                Button(
+                        onClick = {
+                            // No registrar claves ni secretos en logs.
+                            // Acción segura: mostrar mensaje en UI indicando que la acción está deshabilitada en producción.
+                            verificationMessage = "Modo depuración: la visualización de variables sensibles está deshabilitada. Comprueba .env en entorno de desarrollo."
+                            showVerificationResult = true
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Validación Correo")
+                    }
     // Memoized background brush to avoid recreating on each recomposition
     val backgroundBrush = remember {
         Brush.verticalGradient(
@@ -476,7 +456,7 @@ fun SettingsScreen(
                             }
 
                             val availableToAdd = remember(availablePayments, currentPaymentIds) {
-                                availablePayments?.filter { it.id !in currentPaymentIds } ?: emptyList()
+                                availablePayments.filter { it.id !in currentPaymentIds }
                             }
 
                             if (availableToAdd.isEmpty()) {

@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -54,7 +53,7 @@ fun ProductFormScreen(
     val MAX_DESCRIPTION_LENGTH = 255
     val MAX_IMAGE_URL_LENGTH = 255
 
-    val categories by categoryViewModel.categories.observeAsState(emptyList())
+    val categories by categoryViewModel.categories.collectAsState(initial = emptyList())
     val error by productViewModel.error.collectAsState()
 
     val scope = rememberCoroutineScope()

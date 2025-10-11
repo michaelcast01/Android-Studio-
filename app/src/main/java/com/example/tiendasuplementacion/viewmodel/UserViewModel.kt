@@ -1,17 +1,20 @@
 package com.example.tiendasuplementacion.viewmodel
 
 import androidx.lifecycle.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.repository.UserRepository
 import kotlinx.coroutines.launch
 
 class UserViewModel : ViewModel() {
     private val repository = UserRepository()
-    private val _users = MutableLiveData<List<User>>()
-    val users: LiveData<List<User>> = _users
+    private val _users = MutableStateFlow<List<User>>(emptyList())
+    val users: StateFlow<List<User>> = _users.asStateFlow()
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     fun fetchUsers() {
         viewModelScope.launch {

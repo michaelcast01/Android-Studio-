@@ -1,6 +1,9 @@
 package com.example.tiendasuplementacion.viewmodel
 
 import androidx.lifecycle.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.example.tiendasuplementacion.model.OrderDetail
 import com.example.tiendasuplementacion.repository.OrderDetailRepository
 import kotlinx.coroutines.launch
@@ -8,14 +11,14 @@ import kotlinx.coroutines.launch
 class OrderDetailViewModel : ViewModel() {
     private val repository = OrderDetailRepository()
     
-    private val _details = MutableLiveData<List<OrderDetail>>()
-    val details: LiveData<List<OrderDetail>> = _details
+    private val _details = MutableStateFlow<List<OrderDetail>>(emptyList())
+    val details: StateFlow<List<OrderDetail>> = _details.asStateFlow()
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun fetchOrderDetails() {
         viewModelScope.launch {

@@ -14,7 +14,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,14 +74,14 @@ fun ProductScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
-    val products by productViewModel.products.observeAsState(emptyList())
-    val isLoading by productViewModel.isLoading.observeAsState(false)
+    val products by productViewModel.products.collectAsState()
+    val isLoading by productViewModel.isLoading.collectAsState()
     val productsUiState by productViewModel.uiState.collectAsState()
     val cartItems by cartViewModel.cartItems.collectAsState()
     val cartItemCount by remember { derivedStateOf { cartItems.sumOf { it.quantity } } }
     val currentUser by authViewModel.currentUser.collectAsState()
-    val categoryProducts by categoryProductViewModel.relations.observeAsState(emptyList())
-    val categories by categoryViewModel.categories.observeAsState(emptyList())
+    val categoryProducts by categoryProductViewModel.relations.collectAsState(initial = emptyList())
+    val categories by categoryViewModel.categories.collectAsState(initial = emptyList())
     val error by productViewModel.error.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }

@@ -55,9 +55,9 @@ fun OrderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
-    val userDetail by userDetailViewModel.userDetail.observeAsState()
-    val isLoading by userDetailViewModel.isLoading.observeAsState(false)
-    val error by userDetailViewModel.error.observeAsState()
+    val userDetail by userDetailViewModel.userDetail.collectAsState()
+    val isLoading by userDetailViewModel.isLoading.collectAsState(initial = false)
+    val error by userDetailViewModel.error.collectAsState(initial = null)
     val currentUser by authViewModel.currentUser.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }

@@ -11,7 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,9 +33,9 @@ fun PaymentScreen(
     viewModel: PaymentViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
-    val paymentDetails by viewModel.paymentDetails.observeAsState(emptyList())
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
+    val paymentDetails by viewModel.paymentDetails.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     var showErrorDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf<PaymentDetail?>(null) }
     var paymentToEdit by remember { mutableStateOf<PaymentDetail?>(null) }

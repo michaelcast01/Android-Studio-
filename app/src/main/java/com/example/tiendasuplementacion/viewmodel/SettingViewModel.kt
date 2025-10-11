@@ -12,6 +12,9 @@ import com.example.tiendasuplementacion.interfaces.EmailVerificationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 data class EmailVerificationRequest(
     val email: String,
@@ -48,20 +51,21 @@ class SettingViewModel : ViewModel() {
     private val repository = SettingRepository()
     private val emailVerificationService = RetrofitClient.emailVerificationService
 
-    private val _settings = MutableLiveData<List<Setting>>()
-    val settings: LiveData<List<Setting>> = _settings
+    // Replace LiveData with StateFlow for better Compose interoperability
+    private val _settings = MutableStateFlow<List<Setting>>(emptyList())
+    val settings: StateFlow<List<Setting>> = _settings.asStateFlow()
 
-    private val _settingDetail = MutableLiveData<SettingDetail>()
-    val settingDetail: LiveData<SettingDetail> = _settingDetail
+    private val _settingDetail = MutableStateFlow<SettingDetail?>(null)
+    val settingDetail: StateFlow<SettingDetail?> = _settingDetail.asStateFlow()
 
-    private val _availablePayments = MutableLiveData<List<Payment>>()
-    val availablePayments: LiveData<List<Payment>> = _availablePayments
+    private val _availablePayments = MutableStateFlow<List<Payment>>(emptyList())
+    val availablePayments: StateFlow<List<Payment>> = _availablePayments.asStateFlow()
 
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _apiInfo = MutableLiveData<EmailVerificationService>()
-    val apiInfo: LiveData<EmailVerificationService> = _apiInfo
+    private val _apiInfo = MutableStateFlow<EmailVerificationService?>(null)
+    val apiInfo: StateFlow<EmailVerificationService?> = _apiInfo.asStateFlow()
 
     fun fetchSettings() {
         viewModelScope.launch {

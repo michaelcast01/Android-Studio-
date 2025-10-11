@@ -72,7 +72,7 @@ fun LoginScreen(
     var emailVerificationStatus by remember { mutableStateOf<String?>(null) }
     var emailVerified by remember { mutableStateOf(false) }
     
-    val roles by roleViewModel.roles.observeAsState(emptyList())
+    val roles by roleViewModel.roles.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 

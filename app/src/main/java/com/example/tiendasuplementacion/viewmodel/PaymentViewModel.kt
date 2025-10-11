@@ -12,20 +12,20 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class PaymentViewModel : ViewModel() {
     private val repository = PaymentRepository()
-    private val _payments = MutableLiveData<List<Payment>>()
-    val payments: LiveData<List<Payment>> = _payments
+    private val _payments = MutableStateFlow<List<Payment>>(emptyList())
+    val payments: StateFlow<List<Payment>> = _payments.asStateFlow()
 
-    private val _paymentDetails = MutableLiveData<List<PaymentDetail>>()
-    val paymentDetails: LiveData<List<PaymentDetail>> = _paymentDetails
+    private val _paymentDetails = MutableStateFlow<List<PaymentDetail>>(emptyList())
+    val paymentDetails: StateFlow<List<PaymentDetail>> = _paymentDetails.asStateFlow()
 
     private val _paymentDetailsUiState = MutableStateFlow<UiState<List<PaymentDetail>>>(UiState.Loading)
     val paymentDetailsUiState: StateFlow<UiState<List<PaymentDetail>>> = _paymentDetailsUiState.asStateFlow()
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     init {
         fetchPayments()
@@ -52,7 +52,7 @@ class PaymentViewModel : ViewModel() {
                 _isLoading.value = true
                 _error.value = null
                 val createdPayment = repository.create(payment)
-                val currentList = _payments.value?.toMutableList() ?: mutableListOf()
+                val currentList = _payments.value.toMutableList()
                 currentList.add(createdPayment)
                 _payments.value = currentList
             } catch (e: Exception) {
@@ -69,7 +69,7 @@ class PaymentViewModel : ViewModel() {
                 _isLoading.value = true
                 _error.value = null
                 val updatedPayment = repository.update(id, payment)
-                val currentList = _payments.value?.toMutableList() ?: mutableListOf()
+                val currentList = _payments.value.toMutableList()
                 val index = currentList.indexOfFirst { it.id == id }
                 if (index != -1) {
                     currentList[index] = updatedPayment
@@ -91,7 +91,7 @@ class PaymentViewModel : ViewModel() {
                 _error.value = null
                 _paymentDetailsUiState.value = UiState.Loading
                 val details = repository.getPaymentDetails(userId)
-                Log.d("PaymentViewModel", "Received payment details: $details")
+                Log.d("PaymentViewModel", "Received payment details count=${details.size}")
                 _paymentDetails.value = details
                 _paymentDetailsUiState.value = UiState.Success(details)
             } catch (e: Exception) {
@@ -111,13 +111,13 @@ class PaymentViewModel : ViewModel() {
     }
 
     fun getPaymentById(paymentId: Long): Payment? {
-        return payments.value?.find { it.id == paymentId }
+        return payments.value.find { it.id == paymentId }
     }
 
     // A small in-memory cache to hold the last selected PaymentDetail so we can avoid
     // re-fetching immediately after the user selects a payment method and we navigate.
-    private val _selectedPaymentDetail = MutableLiveData<PaymentDetail?>()
-    val selectedPaymentDetail: LiveData<PaymentDetail?> = _selectedPaymentDetail
+    private val _selectedPaymentDetail = MutableStateFlow<PaymentDetail?>(null)
+    val selectedPaymentDetail: StateFlow<PaymentDetail?> = _selectedPaymentDetail.asStateFlow()
 
     fun setSelectedPaymentDetail(paymentDetail: PaymentDetail?) {
         _selectedPaymentDetail.value = paymentDetail
@@ -128,11 +128,7 @@ class PaymentViewModel : ViewModel() {
     }
 
     suspend fun savePaymentDetail(paymentDetail: PaymentDetail): Boolean {
-        Log.d("PaymentViewModel", "Attempting to save payment detail: $paymentDetail")
-        Log.d("PaymentViewModel", "Payment ID: ${paymentDetail.payment_id}")
-        Log.d("PaymentViewModel", "User ID: ${paymentDetail.user_id}")
-        Log.d("PaymentViewModel", "Card details: ${paymentDetail.cardNumber}, ${paymentDetail.expirationDate}, ${paymentDetail.cvc}")
-        Log.d("PaymentViewModel", "Address details: ${paymentDetail.country}, ${paymentDetail.addressLine1}, ${paymentDetail.city}")
+    Log.d("PaymentViewModel", "Attempting to save payment detail for user=${paymentDetail.user_id} payment=${paymentDetail.payment_id}")
         
         return try {
             _isLoading.value = true

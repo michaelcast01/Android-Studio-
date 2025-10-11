@@ -1,8 +1,11 @@
 package com.example.tiendasuplementacion.viewmodel
 
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.tiendasuplementacion.model.UserDetail
 import com.example.tiendasuplementacion.repository.UserDetailRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -11,18 +14,18 @@ import java.time.ZoneOffset
 
 class UserDetailViewModel : ViewModel() {
     private val repository = UserDetailRepository()
-    
-    private val _userDetail = MutableLiveData<UserDetail>()
-    val userDetail: LiveData<UserDetail> = _userDetail
 
-    private val _userDetailsList = MutableLiveData<List<UserDetail>>()
-    val userDetailsList: LiveData<List<UserDetail>> = _userDetailsList
+    private val _userDetail = MutableStateFlow<UserDetail?>(null)
+    val userDetail: StateFlow<UserDetail?> = _userDetail
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    private val _userDetailsList = MutableStateFlow<List<UserDetail>>(emptyList())
+    val userDetailsList: StateFlow<List<UserDetail>> = _userDetailsList
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
 
     fun fetchUserDetails(id: Long) {
         viewModelScope.launch {
@@ -86,4 +89,4 @@ class UserDetailViewModel : ViewModel() {
     fun clearError() {
         _error.value = null
     }
-} 
+}
