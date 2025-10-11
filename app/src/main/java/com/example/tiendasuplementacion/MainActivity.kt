@@ -37,19 +37,28 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
-                if (isAuthenticated == null) {
-                    // Pantalla de carga mientras se restaura la sesión
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(40.dp))
+                when (isAuthenticated) {
+                    null -> {
+                        // Pantalla de carga mientras se restaura la sesión
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                strokeWidth = 4.dp
+                            )
+                        }
                     }
-                } else {
-                    AppNavGraph(
-                        navController = navController,
-                        cartViewModel = cartViewModel,
-                        authViewModel = authViewModel,
-                        paymentViewModel = paymentViewModel,
-                        startDestination = if (isAuthenticated == true) "products" else "login"
-                    )
+                    else -> {
+                        AppNavGraph(
+                            navController = navController,
+                            cartViewModel = cartViewModel,
+                            authViewModel = authViewModel,
+                            paymentViewModel = paymentViewModel,
+                            startDestination = if (isAuthenticated == true) "products" else "login"
+                        )
+                    }
                 }
             }
         }
