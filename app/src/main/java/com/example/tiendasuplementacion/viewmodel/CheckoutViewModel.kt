@@ -12,6 +12,8 @@ import com.example.tiendasuplementacion.repository.ProductRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 data class CheckoutResult(
     val success: Boolean,
@@ -33,6 +35,9 @@ class CheckoutViewModel : ViewModel() {
 
     private val _checkoutResult = MutableStateFlow<CheckoutResult?>(null)
     val checkoutResult: StateFlow<CheckoutResult?> = _checkoutResult
+
+    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     /**
      * Procesa el checkout completo:
@@ -101,14 +106,20 @@ class CheckoutViewModel : ViewModel() {
 
                 _checkoutResult.value = result
 
+                if (result.success) {
+                    _events.emit(UiEvent.ShowSnackbar("Checkout completado"))
+                }
+
                 if (failedItems.isNotEmpty()) {
                     val failedProductNames = failedItems.map { it.first.product.name }
                     _error.value = "Algunos productos no pudieron procesarse: ${failedProductNames.joinToString(", ")}"
+                    _events.emit(UiEvent.ShowError(_error.value ?: "Algunos productos fallaron"))
                 }
 
             } catch (e: Exception) {
                 _error.value = "Error durante el checkout: ${e.message}"
                 _checkoutResult.value = CheckoutResult(success = false)
+                _events.emit(UiEvent.ShowError(_error.value ?: "Error durante el checkout"))
             } finally {
                 _loading.value = false
             }

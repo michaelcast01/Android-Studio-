@@ -36,6 +36,7 @@ import com.example.tiendasuplementacion.util.EnvConfig
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.util.Log
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.input.VisualTransformation
 import kotlinx.serialization.Serializable
 import java.io.Serializable as JavaSerializable
@@ -48,29 +49,30 @@ fun LoginScreen(
     roleViewModel: RoleViewModel = viewModel(),
     settingViewModel: SettingViewModel = viewModel()
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isRegistering by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var isRegistering by rememberSaveable { mutableStateOf(false) }
+    var showError by rememberSaveable { mutableStateOf(false) }
+    var errorMessage by rememberSaveable { mutableStateOf("") }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
     
     // Campos adicionales para registro
-    var username by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf<Role?>(null) }
-    var name by remember { mutableStateOf("") }
-    var nickname by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
+    // Guardamos sólo el id del role para que sea saveable; el objeto Role se puede obtener desde la lista si es necesario
+    var selectedRoleId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var nickname by rememberSaveable { mutableStateOf("") }
+    var phone by rememberSaveable { mutableStateOf("") }
+    var city by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
     
     // Estados para verificación de email
     var isEmailVerifying by remember { mutableStateOf(false) }
     var showVerificationDialog by remember { mutableStateOf(false) }
-    var verificationMessage by remember { mutableStateOf("") }
-    var currentVerificationId by remember { mutableStateOf<String?>(null) }
-    var emailVerificationStatus by remember { mutableStateOf<String?>(null) }
-    var emailVerified by remember { mutableStateOf(false) }
+    var verificationMessage by rememberSaveable { mutableStateOf("") }
+    var currentVerificationId by rememberSaveable { mutableStateOf<String?>(null) }
+    var emailVerificationStatus by rememberSaveable { mutableStateOf<String?>(null) }
+    var emailVerified by rememberSaveable { mutableStateOf(false) }
     
     val roles by roleViewModel.roles.collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
@@ -86,7 +88,7 @@ fun LoginScreen(
 
     // Validación de email
     fun isValidEmail(email: String): Boolean = email.contains("@") && email.length > 3
-    var emailTouched by remember { mutableStateOf(false) }
+    var emailTouched by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         roleViewModel.fetchRoles()
@@ -384,7 +386,7 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                var passwordVisible by remember { mutableStateOf(false) }
+                            var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
                 OutlinedTextField(
                     value = password,

@@ -12,12 +12,17 @@ import com.example.tiendasuplementacion.utils.toOrderProductError
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class OrderProductViewModel : ViewModel() {
     private val repository = OrderProductRepository()
     
     private val _error = MutableStateFlow<OrderProductError?>(null)
     val error: StateFlow<OrderProductError?> = _error
+
+    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
@@ -39,6 +44,7 @@ class OrderProductViewModel : ViewModel() {
             result
         } catch (e: Exception) {
             _error.value = e.toOrderProductError()
+            viewModelScope.launch { _events.emit(UiEvent.ShowError("Error en operación de OrderProduct: ${e.message}")) }
             null
         } finally {
             _loading.value = false
@@ -59,6 +65,7 @@ class OrderProductViewModel : ViewModel() {
             result
         } catch (e: Exception) {
             _error.value = e.toOrderProductError()
+            viewModelScope.launch { _events.emit(UiEvent.ShowError("Error en operación de OrderProduct: ${e.message}")) }
             null
         } finally {
             _loading.value = false
@@ -81,6 +88,7 @@ class OrderProductViewModel : ViewModel() {
             success
         } catch (e: Exception) {
             _error.value = e.toOrderProductError()
+            viewModelScope.launch { _events.emit(UiEvent.ShowError("Error en operación de OrderProduct: ${e.message}")) }
             false
         } finally {
             _loading.value = false
@@ -100,6 +108,7 @@ class OrderProductViewModel : ViewModel() {
             result
         } catch (e: Exception) {
             _error.value = e.toOrderProductError()
+            viewModelScope.launch { _events.emit(UiEvent.ShowError("Error en operación de OrderProduct: ${e.message}")) }
             null
         } finally {
             _loading.value = false

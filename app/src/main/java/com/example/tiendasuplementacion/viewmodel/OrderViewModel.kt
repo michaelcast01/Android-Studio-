@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import com.example.tiendasuplementacion.repository.OrderPagingSource
 import java.time.Instant
 import java.time.format.DateTimeFormatter
@@ -28,6 +31,9 @@ class OrderViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<Order>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Order>>> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     fun fetchOrders() {
         viewModelScope.launch {
@@ -82,9 +88,11 @@ class OrderViewModel : ViewModel() {
 
             try {
                 withContext(Dispatchers.IO) { repository.updateStatus(orderId, newStatusId) }
+                _events.emit(UiEvent.ShowSnackbar("Estado actualizado a ${newStatusId}"))
             } catch (e: Exception) {
                 // revert on error
                 _orders.value = current
+                _events.emit(UiEvent.ShowError(e.message ?: "Error al actualizar estado"))
             }
         }
     }
@@ -97,8 +105,10 @@ class OrderViewModel : ViewModel() {
                 val current = _orders.value
                 _orders.value = current.map { if (it.order_id == orderId) updated else it }
                 onResult?.invoke(true, null)
+                _events.emit(UiEvent.ShowSnackbar("Reembolso procesado"))
             } catch (e: Exception) {
                 onResult?.invoke(false, e.message)
+                _events.emit(UiEvent.ShowError(e.message ?: "Error al procesar reembolso"))
             }
         }
     }
@@ -110,8 +120,10 @@ class OrderViewModel : ViewModel() {
                 val current = _orders.value
                 _orders.value = current.map { if (it.order_id == orderId) updated else it }
                 onResult?.invoke(true, null)
+                _events.emit(UiEvent.ShowSnackbar("Tracking asignado"))
             } catch (e: Exception) {
                 onResult?.invoke(false, e.message)
+                _events.emit(UiEvent.ShowError(e.message ?: "Error asignando tracking"))
             }
         }
     }

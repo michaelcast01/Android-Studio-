@@ -5,9 +5,11 @@ import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.Payment
 import com.example.tiendasuplementacion.model.PaymentDetail
 import com.example.tiendasuplementacion.repository.PaymentRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class PaymentViewModel : ViewModel() {
@@ -26,6 +28,10 @@ class PaymentViewModel : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    // One-shot UI events (snackbars, navigation, etc.)
+    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     init {
         fetchPayments()
@@ -98,6 +104,7 @@ class PaymentViewModel : ViewModel() {
                 Log.e("PaymentViewModel", "Error fetching payment details", e)
                 val msg = e.message ?: "Error al cargar los detalles de pago"
                 _error.value = msg
+                _events.emit(UiEvent.ShowError(msg))
                 _paymentDetails.value = emptyList()
                 _paymentDetailsUiState.value = UiState.Error(msg)
             } finally {
@@ -139,11 +146,13 @@ class PaymentViewModel : ViewModel() {
             currentList.add(savedPaymentDetail)
             _paymentDetails.value = currentList
             _paymentDetailsUiState.value = UiState.Success(currentList)
+            _events.emit(UiEvent.ShowSnackbar("Método de pago guardado"))
             true
         } catch (e: Exception) {
             Log.e("PaymentViewModel", "Error saving payment detail", e)
             _error.value = e.message ?: "Error al guardar los detalles del método de pago"
             _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar los detalles del método de pago")
+            _events.emit(UiEvent.ShowError(_error.value ?: "Error al guardar los detalles del método de pago"))
             false
         } finally {
             _isLoading.value = false
@@ -161,11 +170,15 @@ class PaymentViewModel : ViewModel() {
                 currentList.add(savedPaymentDetail)
                 _paymentDetails.value = currentList
                     _paymentDetailsUiState.value = UiState.Success(currentList)
+                // Emit navigation event and snackbar
+                    _events.emit(UiEvent.ShowSnackbar("Método de pago guardado (navigate back)"))
+                    _events.emit(UiEvent.NavigateBack)
                 onSuccess()
             } catch (e: Exception) {
                 Log.e("PaymentViewModel", "Error saving payment detail", e)
                 _error.value = e.message ?: "Error al guardar los detalles del método de pago"
                     _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar los detalles del método de pago")
+                    _events.emit(UiEvent.ShowError(_error.value ?: "Error al guardar los detalles del método de pago"))
             } finally {
                 _isLoading.value = false
             }

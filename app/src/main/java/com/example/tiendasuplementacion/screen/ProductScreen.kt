@@ -45,6 +45,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
 import android.util.Log
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.tiendasuplementacion.R
 import com.example.tiendasuplementacion.component.ShimmerPlaceholder
 import com.example.tiendasuplementacion.util.CurrencyFormatter
@@ -73,6 +74,21 @@ fun ProductScreen(
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    // Collect one-shot events from ViewModels
+    LaunchedEffect(Unit) {
+        // Cart events (added to cart) are emitted by CartViewModel
+        cartViewModel.events.collect { event ->
+            when (event) {
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
+                }
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
+                }
+                else -> {}
+            }
+        }
+    }
     
     val products by productViewModel.products.collectAsState()
     val isLoading by productViewModel.isLoading.collectAsState()
@@ -83,8 +99,8 @@ fun ProductScreen(
     val categoryProducts by categoryProductViewModel.relations.collectAsState(initial = emptyList())
     val categories by categoryViewModel.categories.collectAsState(initial = emptyList())
     val error by productViewModel.error.collectAsState()
-    var showNetworkError by remember { mutableStateOf(false) }
-    var networkErrorMessage by remember { mutableStateOf("") }
+    var showNetworkError by rememberSaveable { mutableStateOf(false) }
+    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
     val isAdmin by remember { derivedStateOf { currentUser?.role_id == ADMIN_ROLE } }
 
     LaunchedEffect(Unit) {
@@ -156,22 +172,11 @@ fun ProductScreen(
                             ProductCard(
                                 product = product,
                                 onAddToCart = {
+                                    // CartViewModel emits the snackbar event; just call addToCart
                                     try {
                                         cartViewModel.addToCart(it)
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = "Producto agregado al carrito",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
                                     } catch (e: Exception) {
                                         Log.e("ProductScreen", "Error agregando al carrito", e)
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = "No se pudo agregar el producto al carrito",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
                                     }
                                 },
                                 categoryProducts = categoryProducts,
@@ -266,9 +271,9 @@ fun ProductCard(
         }
     }
     val ctx = LocalContext.current
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
-    var showProductDetails by remember { mutableStateOf(false) }
-    var isAdding by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showProductDetails by rememberSaveable { mutableStateOf(false) }
+    var isAdding by rememberSaveable { mutableStateOf(false) }
     val productViewModel: ProductViewModel = viewModel()
 
     if (showDeleteConfirmation) {

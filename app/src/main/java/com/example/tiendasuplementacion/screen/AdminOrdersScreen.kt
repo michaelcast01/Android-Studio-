@@ -11,7 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,18 +41,42 @@ fun AdminOrdersScreen(
 ) {
     // `orders` LiveData not required here; using Paging (`pagedOrdersFlow`) instead to back the list.
     val pagedItems = orderViewModel.pagedOrdersFlow.collectAsLazyPagingItems()
-    var selectedOrder by remember { mutableStateOf<Order?>(null) }
-    var filterStatus by remember { mutableStateOf<Long?>(null) }
-    var search by remember { mutableStateOf("") }
-    var showQuickStatusDialog by remember { mutableStateOf<Order?>(null) }
-    var expandedOrderId by remember { mutableStateOf<Long?>(null) }
+    var selectedOrderId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var filterStatus by rememberSaveable { mutableStateOf<Long?>(null) }
+    var search by rememberSaveable { mutableStateOf("") }
+    var showQuickStatusDialogId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var expandedOrderId by rememberSaveable { mutableStateOf<Long?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val orderProductRepository = remember { OrderProductRepository() }
 
+    // Collect one-shot events from OrderViewModel
+    LaunchedEffect(Unit) {
+        orderViewModel.events.collect { event ->
+            when (event) {
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                else -> {}
+            }
+        }
+    }
+
     LaunchedEffect(filterStatus, search) { 
         orderViewModel.setFilter(statusId = filterStatus, search = if (search.isBlank()) null else search) 
+    }
+
+    // derive selected objects from ids so saved state stays simple (ids are saveable)
+    val selectedOrder = remember(pagedItems.itemSnapshotList.items, selectedOrderId) {
+        selectedOrderId?.let { id -> pagedItems.itemSnapshotList.items.find { it?.order_id == id } }
+    }
+
+    val showQuickStatusDialog = remember(pagedItems.itemSnapshotList.items, showQuickStatusDialogId) {
+        showQuickStatusDialogId?.let { id -> pagedItems.itemSnapshotList.items.find { it?.order_id == id } }
     }
 
     Column(
@@ -214,11 +238,11 @@ fun AdminOrdersScreen(
                 } else {
                     OptimizedOrderCard(
                         order = order,
-                        onClick = { selectedOrder = order },
+                        onClick = { selectedOrderId = order.order_id },
                         onExpandToggle = { 
                             expandedOrderId = if (expandedOrderId == order.order_id) null else order.order_id 
                         },
-                        onQuickStatusChange = { showQuickStatusDialog = order },
+                        onQuickStatusChange = { showQuickStatusDialogId = order.order_id },
                         isExpanded = expandedOrderId == order.order_id,
                         orderProductRepository = orderProductRepository
                     )
@@ -256,7 +280,7 @@ fun AdminOrdersScreen(
     if (selectedOrder != null) {
         OptimizedOrderDialog(
             order = selectedOrder!!,
-            onDismiss = { selectedOrder = null },
+            onDismiss = { selectedOrderId = null },
             orderViewModel = orderViewModel,
             orderProductRepository = orderProductRepository
         )
@@ -266,13 +290,13 @@ fun AdminOrdersScreen(
     if (showQuickStatusDialog != null) {
         QuickStatusChangeDialog(
             order = showQuickStatusDialog!!,
-            onDismiss = { showQuickStatusDialog = null },
+            onDismiss = { showQuickStatusDialogId = null },
             onStatusChange = { newStatus ->
-                orderViewModel.updateOrderStatusOptimistic(showQuickStatusDialog!!.order_id, newStatus)
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Estado actualizado a ${getStatusText(newStatus)}")
+                showQuickStatusDialogId?.let { id ->
+                    orderViewModel.updateOrderStatusOptimistic(id, newStatus)
                 }
-                showQuickStatusDialog = null
+                // Event emitted by OrderViewModel will show the snackbar
+                showQuickStatusDialogId = null
             }
         )
     }

@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 class CartViewModel : ViewModel() {
     private val productRepository = ProductRepository()
@@ -20,6 +22,9 @@ class CartViewModel : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
@@ -36,6 +41,7 @@ class CartViewModel : ViewModel() {
         try {
             if (product.stock <= 0) {
                 _error.value = "No hay stock disponible para este producto"
+                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "No hay stock disponible")) }
                 return
             }
 
@@ -55,8 +61,10 @@ class CartViewModel : ViewModel() {
                 }
             }
             _error.value = null
+            viewModelScope.launch { _events.emit(UiEvent.ShowSnackbar("Producto agregado al carrito")) }
         } catch (e: Exception) {
             _error.value = "Error al añadir producto al carrito: ${e.message}"
+            viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al añadir producto al carrito")) }
         }
     }
 

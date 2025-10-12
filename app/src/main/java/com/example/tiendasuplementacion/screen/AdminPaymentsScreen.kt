@@ -12,7 +12,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -25,6 +25,9 @@ import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import com.example.tiendasuplementacion.model.PaymentMethods
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.model.Payment
+import com.example.tiendasuplementacion.viewmodel.UiEvent
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,12 +38,15 @@ fun AdminPaymentsScreen(
     val payments by viewModel.payments.collectAsState(initial = emptyList())
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val error by viewModel.error.collectAsState(initial = null)
-    var showNetworkError by remember { mutableStateOf(false) }
-    var networkErrorMessage by remember { mutableStateOf("") }
-    var showAddPaymentDialog by remember { mutableStateOf(false) }
-    var showEditPaymentDialog by remember { mutableStateOf(false) }
-    var newPaymentName by remember { mutableStateOf("") }
-    var selectedPayment by remember { mutableStateOf<Payment?>(null) }
+    var showNetworkError by rememberSaveable { mutableStateOf(false) }
+    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
+    var showAddPaymentDialog by rememberSaveable { mutableStateOf(false) }
+    var showEditPaymentDialog by rememberSaveable { mutableStateOf(false) }
+    var newPaymentName by rememberSaveable { mutableStateOf("") }
+    var selectedPaymentId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    var selectedPayment = remember(payments, selectedPaymentId) { selectedPaymentId?.let { id -> payments.find { it.id == id } } }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.fetchPayments()
@@ -50,6 +56,21 @@ fun AdminPaymentsScreen(
         error?.let {
             showNetworkError = true
             networkErrorMessage = it
+        }
+    }
+
+    // Collect events from ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is UiEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is UiEvent.ShowError -> {
+                    showNetworkError = true
+                    networkErrorMessage = event.message
+                }
+                is UiEvent.Navigate -> navController.navigate(event.route) { launchSingleTop = true }
+                is UiEvent.NavigateBack -> navController.popBackStack()
+            }
         }
     }
 
@@ -138,8 +159,8 @@ fun AdminPaymentsScreen(
                                 }
                                 IconButton(
                                     onClick = {
-                                        selectedPayment = payment
-                                        newPaymentName = payment.name
+                                        selectedPaymentId = payment.id
+                                        newPaymentName = payment.name ?: ""
                                         showEditPaymentDialog = true
                                     }
                                 ) {
@@ -238,12 +259,12 @@ fun AdminPaymentsScreen(
             )
         }
 
-        if (showEditPaymentDialog) {
+                if (showEditPaymentDialog) {
             AlertDialog(
                 onDismissRequest = { 
                     showEditPaymentDialog = false
                     newPaymentName = ""
-                    selectedPayment = null
+                            selectedPaymentId = null
                 },
                 title = {
                     Text(
@@ -270,20 +291,22 @@ fun AdminPaymentsScreen(
                         )
                     }
                 },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (newPaymentName.isNotBlank() && selectedPayment != null) {
-                                viewModel.update(selectedPayment!!.id, selectedPayment!!.copy(name = newPaymentName))
-                                showEditPaymentDialog = false
-                                newPaymentName = ""
-                                selectedPayment = null
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    if (newPaymentName.isNotBlank()) {
+                                        selectedPayment?.let { sp ->
+                                            viewModel.update(sp.id, sp.copy(name = newPaymentName))
+                                        }
+                                        showEditPaymentDialog = false
+                                        newPaymentName = ""
+                                        selectedPaymentId = null
+                                    }
+                                }
+                            ) {
+                                Text("Guardar", color = Color(0xFFF6E7DF))
                             }
-                        }
-                    ) {
-                        Text("Guardar", color = Color(0xFFF6E7DF))
-                    }
-                },
+                        },
                 dismissButton = {
                     TextButton(
                         onClick = {
@@ -299,5 +322,7 @@ fun AdminPaymentsScreen(
                 shape = RoundedCornerShape(16.dp)
             )
         }
+        // Snackbar host for one-shot messages
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 } 

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,16 +55,30 @@ fun OrderScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    // Collect one-shot events from UserDetailViewModel
+    LaunchedEffect(Unit) {
+        userDetailViewModel.events.collect { event ->
+            when (event) {
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                else -> {}
+            }
+        }
+    }
     
     val userDetail by userDetailViewModel.userDetail.collectAsState()
     val isLoading by userDetailViewModel.isLoading.collectAsState(initial = false)
     val error by userDetailViewModel.error.collectAsState(initial = null)
     val currentUser by authViewModel.currentUser.collectAsState()
-    var showNetworkError by remember { mutableStateOf(false) }
-    var networkErrorMessage by remember { mutableStateOf("") }
-    var selectedOrder by remember { mutableStateOf<UserOrder?>(null) }
-    var showOrderDetails by remember { mutableStateOf(false) }
-    var isProcessingPdf by remember { mutableStateOf(false) }
+    var showNetworkError by rememberSaveable { mutableStateOf(false) }
+    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
+    var selectedOrderId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showOrderDetails by rememberSaveable { mutableStateOf(false) }
+    var isProcessingPdf by rememberSaveable { mutableStateOf(false) }
 
     // Instancia del repositorio para PDF
     val orderProductRepository = remember { OrderProductRepository() }
@@ -74,12 +89,7 @@ fun OrderScreen(
                 userDetailViewModel.fetchUserDetails(userId)
             } catch (e: Exception) {
                 Log.e("OrderScreen", "Error fetching user details", e)
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = "Error al cargar el historial de compras",
-                        duration = SnackbarDuration.Short
-                    )
-                }
+                // Error handling moved to ViewModel events; nothing to do here
             }
         }
     }
@@ -191,7 +201,7 @@ fun OrderScreen(
                                         Button(
                                             onClick = {
                                                 try {
-                                                    selectedOrder = latest
+                                                    selectedOrderId = latest.order_id
                                                     showOrderDetails = true
                                                 } catch (e: Exception) {
                                                     Log.e("OrderScreen", "Error showing order details", e)
@@ -263,7 +273,7 @@ fun OrderScreen(
                                             Button(
                                                 onClick = {
                                                     try {
-                                                        selectedOrder = order
+                                                        selectedOrderId = order.order_id
                                                         showOrderDetails = true
                                                     } catch (e: Exception) {
                                                         Log.e("OrderScreen", "Error showing order details", e)
@@ -323,12 +333,14 @@ fun OrderScreen(
         )
     }
 
+    val selectedOrder = remember(userDetail?.orders, selectedOrderId) { selectedOrderId?.let { id -> userDetail?.orders?.find { it.order_id == id } } }
+
     if (showOrderDetails && selectedOrder != null) {
-        // Generate PDF with proper coroutine handling
-        var pdfPath by remember(selectedOrder) { mutableStateOf("") }
-        var isGeneratingPdf by remember(selectedOrder) { mutableStateOf(false) }
-        
-        LaunchedEffect(selectedOrder) {
+        // Generate PDF with proper coroutine handling keyed by selectedOrderId
+        var pdfPath by remember(selectedOrderId) { mutableStateOf("") }
+        var isGeneratingPdf by remember(selectedOrderId) { mutableStateOf(false) }
+
+        LaunchedEffect(selectedOrderId) {
             selectedOrder?.let { order ->
                 isGeneratingPdf = true
                 try {
@@ -351,7 +363,7 @@ fun OrderScreen(
         }
 
         val pdfUri = remember(pdfPath) {
-                    if (pdfPath.isNotEmpty()) {
+            if (pdfPath.isNotEmpty()) {
                 try {
                     FileProvider.getUriForFile(
                         context,
@@ -366,9 +378,9 @@ fun OrderScreen(
         }
 
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showOrderDetails = false
-                selectedOrder = null
+                selectedOrderId = null
             },
             containerColor = Color.White,
             title = {
@@ -553,16 +565,16 @@ fun OrderScreen(
                     }
                 }
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showOrderDetails = false
-                        selectedOrder = null
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showOrderDetails = false
+                            selectedOrderId = null
+                        }
+                    ) {
+                        Text("Cerrar", color = Color(0xFF3F51B5))
                     }
-                ) {
-                    Text("Cerrar", color = Color(0xFF3F51B5))
                 }
-            }
         )
     }
 }

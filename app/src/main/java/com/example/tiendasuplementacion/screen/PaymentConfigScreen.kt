@@ -21,6 +21,7 @@ import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import com.example.tiendasuplementacion.viewmodel.AuthViewModel
 import com.example.tiendasuplementacion.model.PaymentDetail
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,19 +30,19 @@ fun PaymentConfigScreen(
     viewModel: PaymentViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel()
 ) {
-    var selectedPaymentId by remember { mutableStateOf<Long?>(null) }
-    var cardNumber by remember { mutableStateOf("") }
-    var expirationDate by remember { mutableStateOf("") }
-    var cvc by remember { mutableStateOf("") }
-    var cardholderName by remember { mutableStateOf("") }
-    var country by remember { mutableStateOf("") }
-    var addressLine1 by remember { mutableStateOf("") }
-    var addressLine2 by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
-    var stateOrProvince by remember { mutableStateOf("") }
-    var postalCode by remember { mutableStateOf("") }
-    var shouldSave by remember { mutableStateOf(false) }
-    var paymentToSave by remember { mutableStateOf<PaymentDetail?>(null) }
+    var selectedPaymentId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var cardNumber by rememberSaveable { mutableStateOf("") }
+    var expirationDate by rememberSaveable { mutableStateOf("") }
+    var cvc by rememberSaveable { mutableStateOf("") }
+    var cardholderName by rememberSaveable { mutableStateOf("") }
+    var country by rememberSaveable { mutableStateOf("") }
+    var addressLine1 by rememberSaveable { mutableStateOf("") }
+    var addressLine2 by rememberSaveable { mutableStateOf("") }
+    var city by rememberSaveable { mutableStateOf("") }
+    var stateOrProvince by rememberSaveable { mutableStateOf("") }
+    var postalCode by rememberSaveable { mutableStateOf("") }
+    var shouldSave by rememberSaveable { mutableStateOf(false) }
+    var paymentToSave by rememberSaveable { mutableStateOf<PaymentDetail?>(null) }
     
     val currentUser by authViewModel.currentUser.collectAsState()
     val scrollState = rememberScrollState()
