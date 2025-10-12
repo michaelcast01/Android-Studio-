@@ -49,6 +49,12 @@ class ProductViewModel : ViewModel() {
         }
     }
 
+    fun refreshProducts() {
+        // Limpiar cache antes de refrescar
+        repository.clearCache()
+        fetchProducts()
+    }
+
     fun createProduct(product: Product): Product {
         var createdProduct: Product? = null
         viewModelScope.launch {

@@ -20,13 +20,62 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# Mantener las clases necesarias para Retrofit
+# ========= OPTIMIZACIONES AVANZADAS =========
+
+# Mantener las clases necesarias para Retrofit y serialización
 -keep class retrofit2.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class com.example.tiendasuplementacion.model.** { *; }
+-keep class com.example.tiendasuplementacion.interfaces.** { *; }
 -keepattributes Signature
+-keepattributes *Annotation*
 
-# Excluir clases innecesarias
+# Optimizaciones de Kotlin
+-keep class kotlin.reflect.** { *; }
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.reflect.**
+
+# Optimizaciones de Coroutines
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+# Optimizaciones de Compose
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**
+
+# Optimizaciones de Coil (Image Loading)
+-keep class coil.** { *; }
+-dontwarn coil.**
+
+# Optimizaciones de OkHttp3
 -dontwarn okhttp3.internal.platform.**
--dontwarn javax.annotation.**
+-dontwarn org.codehaus.mojo.animal_sniffer.*
+-keep class okhttp3.** { *; }
 
-# Proteger el código
+# Remover warnings innecesarios
+-dontwarn javax.annotation.**
+-dontwarn org.jetbrains.annotations.**
+-dontwarn com.itextpdf.**
+
+# Optimizaciones agresivas para reducir tamaño
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontpreverify
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+-verbose
+
+# Remover logging en release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int i(...);
+    public static int w(...);
+    public static int d(...);
+    public static int e(...);
+}
+
+# Obfuscation más agresiva
 -obfuscate
+-repackageclasses
