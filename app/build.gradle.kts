@@ -8,6 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
+    compileSdkVersion("android-36")
     compileSdk = 36
 
     defaultConfig {
