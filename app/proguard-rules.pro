@@ -58,8 +58,10 @@
 -dontwarn com.itextpdf.**
 
 # Optimizaciones agresivas para reducir tamaño
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
--optimizationpasses 5
+# The following ProGuard options are not supported by R8 or are ignored
+# by the Android toolchain. Commenting them out to avoid R8 failures.
+#-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+#-optimizationpasses 5
 -allowaccessmodification
 -dontpreverify
 -dontusemixedcaseclassnames
@@ -77,5 +79,20 @@
 }
 
 # Obfuscation más agresiva
--obfuscate
--repackageclasses
+# R8 controls obfuscation itself; explicit -obfuscate / -repackageclasses
+# are not recognized by the current R8 implementation. Keep R8 defaults
+# and use -keep rules to preserve reflection entry points if needed.
+#-obfuscate
+#-repackageclasses
+
+# ------------------------------------------------------------------
+# Rules added automatically from R8 suggestions to suppress missing
+# class warnings (generated in build/outputs/mapping/release/missing_rules.txt)
+# Add these so R8 doesn't fail the build when libraries reference
+# optional JVM-only APIs that aren't available on Android runtime.
+-dontwarn aQute.bnd.annotation.spi.ServiceProvider
+-dontwarn javax.xml.stream.XMLEventFactory
+-dontwarn javax.xml.stream.XMLInputFactory
+-dontwarn javax.xml.stream.XMLOutputFactory
+-dontwarn javax.xml.stream.XMLResolver
+-dontwarn javax.xml.stream.util.XMLEventAllocator
