@@ -19,6 +19,8 @@ import java.text.NumberFormat
 import java.util.*
 import com.itextpdf.kernel.font.PdfFontFactory
 import com.itextpdf.layout.borders.Border
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object PdfGenerator {
     suspend fun generateInvoicePdfWithDetails(
@@ -32,8 +34,10 @@ object PdfGenerator {
         } catch (e: Exception) {
             emptyList<OrderProductDetail>()
         }
-        
-        return generateInvoicePdf(context, order, orderDetails)
+        // Offload the CPU- and IO-heavy PDF generation to a background dispatcher
+        return withContext(Dispatchers.Default) {
+            generateInvoicePdf(context, order, orderDetails)
+        }
     }
 
     fun generateInvoicePdf(context: Context, order: UserOrder, orderDetails: List<OrderProductDetail> = emptyList()): String {

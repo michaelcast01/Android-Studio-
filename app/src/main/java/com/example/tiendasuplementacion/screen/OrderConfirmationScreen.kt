@@ -122,6 +122,7 @@ fun OrderConfirmationScreen(
     val totalProducts = cartItems.sumOf { it.quantity }
     val currentUser by authViewModel.currentUser.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) } // Previene ejecución múltiple
     var showError by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -394,7 +395,14 @@ fun OrderConfirmationScreen(
 
         Button(
             onClick = {
+                // Prevenir múltiples ejecuciones simultáneas
+                if (isProcessing) {
+                    Log.w("OrderConfirmation", "Already processing, ignoring click")
+                    return@Button
+                }
+                
                 coroutineScope.launch {
+                    isProcessing = true
                     isLoading = true
                     try {
                         var finalStatusId = 1L // Default: pendiente
@@ -519,19 +527,26 @@ fun OrderConfirmationScreen(
                         Log.d("OrderConfirmation", "Set orderStatus to: $orderStatus")
                         Log.d("OrderConfirmation", "Set createdOrderId to: $createdOrderId")
 
-                        cartItems.forEach { item ->
+                        // Crear OrderProducts secuencialmente para garantizar descuento de stock
+                        Log.d("OrderConfirmation", "Creating ${cartItems.size} OrderProducts...")
+                        for (item in cartItems) {
                             val orderProductRequest = com.example.tiendasuplementacion.model.CreateOrderProductRequest(
                                 order_id = createdOrderId ?: 0L,
                                 product_id = item.product.id,
                                 quantity = item.quantity,
                                 price = item.product.price
                             )
-                            // Usar coroutine para llamar a la función suspendida
-                            launch {
-                                orderProductViewModel.createOrderProduct(orderProductRequest)
+                            try {
+                                // Esperar cada llamada para garantizar que el stock se descuente
+                                val orderProduct = orderProductViewModel.createOrderProduct(orderProductRequest)
+                                Log.d("OrderConfirmation", "OrderProduct created for ${item.product.name}: $orderProduct")
+                            } catch (e: Exception) {
+                                Log.e("OrderConfirmation", "Error creating OrderProduct for ${item.product.name}", e)
+                                throw e // Propagar error para que se maneje en el catch principal
                             }
                         }
 
+                        Log.d("OrderConfirmation", "All OrderProducts created successfully")
                         cartViewModel.clearCart()
                         showSuccess = true
 
@@ -542,6 +557,7 @@ fun OrderConfirmationScreen(
                         }
                     } finally {
                         isLoading = false
+                        isProcessing = false // Permitir nuevos intentos solo después de completar o fallar
                     }
                 }
             },
@@ -553,7 +569,7 @@ fun OrderConfirmationScreen(
                 contentColor = Color(0xFF23242A)
             ),
             shape = RoundedCornerShape(12.dp),
-            enabled = !isLoading
+            enabled = !isLoading && !isProcessing // Deshabilitar mientras se procesa
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
