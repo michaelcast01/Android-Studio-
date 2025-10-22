@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 fun AdminOrdersScreen(
     orderViewModel: OrderViewModel = viewModel()
 ) {
-    // `orders` LiveData not required here; using Paging (`pagedOrdersFlow`) instead to back the list.
+    val orders by orderViewModel.orders.observeAsState(emptyList())
     val pagedItems = orderViewModel.pagedOrdersFlow.collectAsLazyPagingItems()
     var selectedOrder by remember { mutableStateOf<Order?>(null) }
     var filterStatus by remember { mutableStateOf<Long?>(null) }

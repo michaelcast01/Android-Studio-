@@ -8,11 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
-    compileSdk = 36
+    compileSdkVersion("android-36.1")
 
     defaultConfig {
         applicationId = "com.example.tiendasuplementacion"
         minSdk = 24
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

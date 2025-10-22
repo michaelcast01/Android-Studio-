@@ -10,12 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class ProductViewModel : ViewModel() {
     private val repository = ProductRepository()
-    // Using StateFlow for Compose compatibility
-    private val _products = MutableStateFlow<List<Product>>(emptyList())
-    val products: StateFlow<List<Product>> = _products.asStateFlow()
+    private val _products = MutableLiveData<List<Product>>()
+    val products: LiveData<List<Product>> = _products
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean> = _isLoading
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error

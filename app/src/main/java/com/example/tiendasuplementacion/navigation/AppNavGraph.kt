@@ -39,7 +39,7 @@ import com.example.tiendasuplementacion.viewmodel.PaymentViewModel
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -234,8 +234,8 @@ fun OrderConfirmationHost(
     authViewModel: com.example.tiendasuplementacion.viewmodel.AuthViewModel,
     paymentId: Long
 ) {
-    val paymentDetails by paymentViewModel.paymentDetails.collectAsState()
-    val cachedSelected by paymentViewModel.selectedPaymentDetail.collectAsState()
+    val paymentDetails by paymentViewModel.paymentDetails.observeAsState(emptyList())
+    val cachedSelected by paymentViewModel.selectedPaymentDetail.observeAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     // Prefer the in-memory cached selected payment detail (set when the user tapped it);
     // fall back to searching the loaded list and then to fetching from the repository.

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,8 +21,8 @@ fun UserScreen(
     navController: NavController,
     viewModel: UserViewModel = viewModel()
 ) {
-    val users by viewModel.users.collectAsState(initial = emptyList())
-    val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val users by viewModel.users.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
 
     LaunchedEffect(Unit) {
         viewModel.fetchUsers()

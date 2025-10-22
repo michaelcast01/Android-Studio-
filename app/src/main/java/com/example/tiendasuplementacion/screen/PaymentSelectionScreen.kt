@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -37,10 +37,10 @@ fun PaymentSelectionScreen(
     authViewModel: AuthViewModel = viewModel(),
     onPaymentSelected: (PaymentDetail) -> Unit
 ) {
-    val paymentDetails by paymentViewModel.paymentDetails.collectAsState()
-    val isLoading by paymentViewModel.isLoading.collectAsState()
+    val paymentDetails by paymentViewModel.paymentDetails.observeAsState(emptyList())
+    val isLoading by paymentViewModel.isLoading.observeAsState(false)
     val paymentDetailsUiState by paymentViewModel.paymentDetailsUiState.collectAsState()
-    val error by paymentViewModel.error.collectAsState()
+    val error by paymentViewModel.error.observeAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }

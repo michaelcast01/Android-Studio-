@@ -55,9 +55,9 @@ fun SettingsScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
-    val settingDetail by settingViewModel.settingDetail.collectAsState()
-    val availablePayments by settingViewModel.availablePayments.collectAsState(initial = emptyList())
-    val error by settingViewModel.error.collectAsState(initial = null)    
+    val settingDetail by settingViewModel.settingDetail.observeAsState()
+    val availablePayments by settingViewModel.availablePayments.observeAsState()
+    val error by settingViewModel.error.observeAsState()    
     
     // Estados de UI optimizados
     var showNetworkError by remember { mutableStateOf(false) }

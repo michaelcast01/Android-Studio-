@@ -17,7 +17,7 @@ fun StatusScreen(
     navController: NavController,
     viewModel: StatusViewModel = viewModel()
 ) {
-    val statuses by viewModel.statuses.collectAsState(initial = emptyList())
+    val statuses by viewModel.statuses.observeAsState(emptyList())
 
     LaunchedEffect(Unit) {
         viewModel.fetchStatuses()

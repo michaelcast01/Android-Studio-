@@ -5,7 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,8 +18,8 @@ fun PaymentMethodsEditScreen(
     navController: NavController,
     settingViewModel: SettingViewModel = viewModel()
 ) {
-    val settingDetail by settingViewModel.settingDetail.collectAsState()
-    val error by settingViewModel.error.collectAsState()
+    val settingDetail by settingViewModel.settingDetail.observeAsState()
+    val error by settingViewModel.error.observeAsState()
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
 
@@ -93,4 +93,6 @@ fun PaymentMethodsEditScreen(
     }
 }
 
-// helper removed; use settingViewModel.fetchAvailablePaymentMethods() directly from LaunchedEffect
+private fun SettingViewModel.fetchAvailablePaymentMethods() {
+    TODO("Not yet implemented")
+}

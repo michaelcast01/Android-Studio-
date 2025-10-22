@@ -1,17 +1,14 @@
 package com.example.tiendasuplementacion.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.Status
 import com.example.tiendasuplementacion.repository.StatusRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class StatusViewModel : ViewModel() {
     private val repository = StatusRepository()
-    private val _statuses = MutableStateFlow<List<Status>>(emptyList())
-    val statuses: StateFlow<List<Status>> = _statuses
+    private val _statuses = MutableLiveData<List<Status>>()
+    val statuses: LiveData<List<Status>> = _statuses
 
     fun fetchStatuses() {
         viewModelScope.launch {

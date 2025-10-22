@@ -26,11 +26,8 @@ object EnvConfig {
             inputStream.close()
             Log.d(TAG, "Archivo .env cargado exitosamente")
         } catch (e: IOException) {
-            Log.w(TAG, "No se pudo cargar archivo .env: ${e.message}")
+            Log.e(TAG, "Error al cargar archivo .env: ${e.message}")
             // Si no se puede cargar desde assets, intentar valores por defecto
-            setDefaultValues()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error inesperado al cargar .env: ${e.message}")
             setDefaultValues()
         }
     }
