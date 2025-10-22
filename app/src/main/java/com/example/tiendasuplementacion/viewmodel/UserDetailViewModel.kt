@@ -7,8 +7,6 @@ import com.example.tiendasuplementacion.repository.UserDetailRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -29,9 +27,6 @@ class UserDetailViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
-
     fun fetchUserDetails(id: Long) {
         viewModelScope.launch {
             try {
@@ -45,7 +40,6 @@ class UserDetailViewModel : ViewModel() {
                 _userDetail.value = fetched.copy(orders = sortedOrders)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al cargar los detalles del usuario"
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al cargar los detalles del usuario")) }
             } finally {
                 _isLoading.value = false
             }
@@ -85,7 +79,6 @@ class UserDetailViewModel : ViewModel() {
                 _userDetailsList.value = repository.getUserDetailsByRole(roleId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al cargar los detalles de los usuarios"
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al cargar los detalles de los usuarios")) }
                 _userDetailsList.value = emptyList()
             } finally {
                 _isLoading.value = false

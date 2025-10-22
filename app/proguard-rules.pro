@@ -20,79 +20,13 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# ========= OPTIMIZACIONES AVANZADAS =========
-
-# Mantener las clases necesarias para Retrofit y serialización
+# Mantener las clases necesarias para Retrofit
 -keep class retrofit2.** { *; }
--keep class com.google.gson.** { *; }
--keep class com.example.tiendasuplementacion.model.** { *; }
--keep class com.example.tiendasuplementacion.interfaces.** { *; }
 -keepattributes Signature
--keepattributes *Annotation*
 
-# Optimizaciones de Kotlin
--keep class kotlin.reflect.** { *; }
--keep class kotlin.Metadata { *; }
--dontwarn kotlin.reflect.**
-
-# Optimizaciones de Coroutines
--keep class kotlinx.coroutines.** { *; }
--dontwarn kotlinx.coroutines.**
-
-# Optimizaciones de Compose
--keep class androidx.compose.** { *; }
--dontwarn androidx.compose.**
-
-# Optimizaciones de Coil (Image Loading)
--keep class coil.** { *; }
--dontwarn coil.**
-
-# Optimizaciones de OkHttp3
+# Excluir clases innecesarias
 -dontwarn okhttp3.internal.platform.**
--dontwarn org.codehaus.mojo.animal_sniffer.*
--keep class okhttp3.** { *; }
-
-# Remover warnings innecesarios
 -dontwarn javax.annotation.**
--dontwarn org.jetbrains.annotations.**
--dontwarn com.itextpdf.**
 
-# Optimizaciones agresivas para reducir tamaño
-# The following ProGuard options are not supported by R8 or are ignored
-# by the Android toolchain. Commenting them out to avoid R8 failures.
-#-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
-#-optimizationpasses 5
--allowaccessmodification
--dontpreverify
--dontusemixedcaseclassnames
--dontskipnonpubliclibraryclasses
--verbose
-
-# Remover logging en release
--assumenosideeffects class android.util.Log {
-    public static boolean isLoggable(java.lang.String, int);
-    public static int v(...);
-    public static int i(...);
-    public static int w(...);
-    public static int d(...);
-    public static int e(...);
-}
-
-# Obfuscation más agresiva
-# R8 controls obfuscation itself; explicit -obfuscate / -repackageclasses
-# are not recognized by the current R8 implementation. Keep R8 defaults
-# and use -keep rules to preserve reflection entry points if needed.
-#-obfuscate
-#-repackageclasses
-
-# ------------------------------------------------------------------
-# Rules added automatically from R8 suggestions to suppress missing
-# class warnings (generated in build/outputs/mapping/release/missing_rules.txt)
-# Add these so R8 doesn't fail the build when libraries reference
-# optional JVM-only APIs that aren't available on Android runtime.
--dontwarn aQute.bnd.annotation.spi.ServiceProvider
--dontwarn javax.xml.stream.XMLEventFactory
--dontwarn javax.xml.stream.XMLInputFactory
--dontwarn javax.xml.stream.XMLOutputFactory
--dontwarn javax.xml.stream.XMLResolver
--dontwarn javax.xml.stream.util.XMLEventAllocator
+# Proteger el código
+-obfuscate

@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -24,9 +23,6 @@ import com.example.tiendasuplementacion.viewmodel.CategoryViewModel
 import com.example.tiendasuplementacion.viewmodel.CategoryProductViewModel
 import kotlinx.coroutines.launch
 import android.util.Log
-import com.example.tiendasuplementacion.viewmodel.UiEvent
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,18 +36,17 @@ fun ProductFormScreen(
     categoryProductViewModel: CategoryProductViewModel = viewModel(),
     productId: Long = 0L
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var description by rememberSaveable { mutableStateOf("") }
-    var price by rememberSaveable { mutableStateOf("") }
-    var stock by rememberSaveable { mutableStateOf("") }
-    var imageUrl by rememberSaveable { mutableStateOf("") }
-    var isLoading by rememberSaveable { mutableStateOf(false) }
-    var showError by rememberSaveable { mutableStateOf(false) }
-    var errorMessage by rememberSaveable { mutableStateOf("") }
-    // store only category id to keep it saveable
-    var selectedCategoryId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    var isEditing by rememberSaveable { mutableStateOf(productId != 0L) }
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("") }
+    var imageUrl by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+    var isEditing by remember { mutableStateOf(productId != 0L) }
     val scrollState = rememberScrollState()
 
     val MAX_NAME_LENGTH = 100
@@ -60,11 +55,6 @@ fun ProductFormScreen(
 
     val categories by categoryViewModel.categories.collectAsState(initial = emptyList())
     val error by productViewModel.error.collectAsState()
-
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // derive selectedCategory from id to avoid holding whole object in saveable state
-    val selectedCategory = remember(selectedCategoryId, categories) { selectedCategoryId?.let { id -> categories.find { it.id == id } } }
 
     val scope = rememberCoroutineScope()
 
@@ -78,7 +68,7 @@ fun ProductFormScreen(
                 price = product.price.toString()
                 stock = product.stock.toString()
                 imageUrl = product.url_image
-                // If the relation exists elsewhere, it could be set here. Keep as null by default.
+                // TODO: Set selected category when available
             } catch (e: Exception) {
                 errorMessage = "Error al cargar el producto: ${e.message}"
                 showError = true
@@ -86,24 +76,10 @@ fun ProductFormScreen(
         }
     }
 
-    // Collect one-shot UI events from the ViewModel
-    LaunchedEffect(Unit) {
-        productViewModel.events.collect { event ->
-            when (event) {
-                is UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(event.message)
-                }
-                is UiEvent.ShowError -> {
-                    errorMessage = event.message
-                    showError = true
-                }
-                is UiEvent.Navigate -> {
-                    navController.navigate(event.route) { launchSingleTop = true }
-                }
-                is UiEvent.NavigateBack -> {
-                    navController.popBackStack()
-                }
-            }
+    LaunchedEffect(error) {
+        error?.let {
+            errorMessage = it
+            showError = true
         }
     }
 
@@ -120,8 +96,6 @@ fun ProductFormScreen(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Snackbar host for one-shot snackbars emitted from ViewModel
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
@@ -226,7 +200,7 @@ fun ProductFormScreen(
                             DropdownMenuItem(
                                 text = { Text(category.name) },
                                 onClick = {
-                                    selectedCategoryId = category.id
+                                    selectedCategory = category
                                     expanded = false
                                 }
                             )
@@ -235,13 +209,6 @@ fun ProductFormScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // Use derived state to minimize recompositions for enabled check
-                val isFormValid by remember(name, description, price, stock, imageUrl, selectedCategoryId) {
-                    derivedStateOf {
-                        name.isNotBlank() && description.isNotBlank() && price.isNotBlank() && stock.isNotBlank() && imageUrl.isNotBlank() && selectedCategoryId != null
-                    }
-                }
 
                 Button(
                     onClick = {
@@ -296,7 +263,9 @@ fun ProductFormScreen(
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    enabled = !isLoading && isFormValid
+                    enabled = !isLoading && name.isNotBlank() && description.isNotBlank() && 
+                             price.isNotBlank() && stock.isNotBlank() && 
+                             imageUrl.isNotBlank() && selectedCategory != null
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(

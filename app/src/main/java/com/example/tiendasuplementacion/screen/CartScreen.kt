@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,28 +39,14 @@ fun CartScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val cartDataStore = remember { CartDataStore(context) }
-    // Collect one-shot events from CartViewModel
-    LaunchedEffect(Unit) {
-        cartViewModel.events.collect { event ->
-            when (event) {
-                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
-                }
-                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
-                }
-                else -> {}
-            }
-        }
-    }
     
     val cartItems by cartViewModel.cartItems.collectAsState()
     val error by cartViewModel.error.collectAsState()
-    var showNetworkError by rememberSaveable { mutableStateOf(false) }
-    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
-    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
-    var productToDelete by rememberSaveable { mutableStateOf<Long?>(null) }
-    var isProcessing by rememberSaveable { mutableStateOf(false) }
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var productToDelete by remember { mutableStateOf<Long?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
 
     LaunchedEffect(error) {
         val errorValue = error
@@ -102,18 +87,30 @@ fun CartScreen(
             text = { Text("¿Estás seguro de que quieres eliminar este producto del carrito?") },
             confirmButton = {
                 TextButton(
-                            onClick = {
-                                isProcessing = true
-                                try {
-                                    productToDelete?.let { cartViewModel.removeFromCart(it) }
-                                } catch (e: Exception) {
-                                    Log.e("CartScreen", "Error eliminando producto", e)
-                                } finally {
-                                    isProcessing = false
-                                    showDeleteConfirmation = false
-                                    productToDelete = null
-                                }
-                            },
+                    onClick = {
+                        isProcessing = true
+                        try {
+                            productToDelete?.let { cartViewModel.removeFromCart(it) }
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Producto eliminado del carrito",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CartScreen", "Error eliminando producto", e)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "No se pudo eliminar el producto",
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        } finally {
+                            isProcessing = false
+                            showDeleteConfirmation = false
+                            productToDelete = null
+                        }
+                    },
                     enabled = !isProcessing
                 ) {
                     if (isProcessing) {

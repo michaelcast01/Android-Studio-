@@ -7,8 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 class ProductViewModel : ViewModel() {
     private val repository = ProductRepository()
@@ -21,9 +19,6 @@ class ProductViewModel : ViewModel() {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
-
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
 
     // New unified UI state
     private val _uiState = MutableStateFlow<UiState<List<Product>>>(UiState.Loading)
@@ -41,18 +36,11 @@ class ProductViewModel : ViewModel() {
             } catch (e: Exception) {
                 val msg = "Error al cargar los productos: ${e.message}"
                 _error.value = msg
-                _events.emit(UiEvent.ShowError(msg))
                 _uiState.value = UiState.Error(msg)
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    fun refreshProducts() {
-        // Limpiar cache antes de refrescar
-        repository.clearCache()
-        fetchProducts()
     }
 
     fun createProduct(product: Product): Product {
@@ -63,10 +51,8 @@ class ProductViewModel : ViewModel() {
                 createdProduct = repository.create(product)
                 fetchProducts()
                 _error.value = null
-                _events.emit(UiEvent.ShowSnackbar("Producto creado"))
             } catch (e: Exception) {
                 _error.value = "Error al crear el producto: ${e.message}"
-                _events.emit(UiEvent.ShowError(_error.value ?: "Error al crear el producto"))
                 throw e
             }
         }
@@ -94,10 +80,8 @@ class ProductViewModel : ViewModel() {
                 repository.delete(id)
                 fetchProducts()
                 _error.value = null
-                _events.emit(UiEvent.ShowSnackbar("Producto eliminado"))
             } catch (e: Exception) {
                 _error.value = "Error al eliminar el producto: ${e.message}"
-                _events.emit(UiEvent.ShowError(_error.value ?: "Error al eliminar el producto"))
             }
         }
     }
@@ -107,7 +91,6 @@ class ProductViewModel : ViewModel() {
             repository.getById(id)
         } catch (e: Exception) {
             _error.value = "Error al obtener el producto: ${e.message}"
-            _events.emit(UiEvent.ShowError(_error.value ?: "Error al obtener el producto"))
             throw e
         }
     }
@@ -119,10 +102,8 @@ class ProductViewModel : ViewModel() {
                 repository.update(id, product)
                 fetchProducts()
                 _error.value = null
-                _events.emit(UiEvent.ShowSnackbar("Producto actualizado"))
             } catch (e: Exception) {
                 _error.value = "Error al actualizar el producto: ${e.message}"
-                _events.emit(UiEvent.ShowError(_error.value ?: "Error al actualizar el producto"))
             }
         }
     }

@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -37,39 +36,21 @@ fun PaymentScreen(
     val paymentDetails by viewModel.paymentDetails.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    var showErrorDialog by rememberSaveable { mutableStateOf(false) }
-    // PaymentDetail is not trivially saveable; keep nullable object references in memory only
+    var showErrorDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf<PaymentDetail?>(null) }
     var paymentToEdit by remember { mutableStateOf<PaymentDetail?>(null) }
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
-    var showNetworkError by rememberSaveable { mutableStateOf(false) }
-    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // Collect ViewModel one-shot events
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
-                }
-                is com.example.tiendasuplementacion.viewmodel.UiEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(event.message, duration = SnackbarDuration.Short)
-                }
-                is com.example.tiendasuplementacion.viewmodel.UiEvent.Navigate -> {
-                    navController.navigate(event.route)
-                }
-                com.example.tiendasuplementacion.viewmodel.UiEvent.NavigateBack -> {
-                    navController.navigateUp()
-                }
-            }
-        }
-    }
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(currentUser?.id) {
+        Log.d("PaymentScreen", "Current user: $currentUser")
         currentUser?.id?.let { userId ->
+            Log.d("PaymentScreen", "Fetching payment details for user ID: $userId")
             viewModel.fetchPaymentDetails(userId)
+        } ?: run {
+            Log.e("PaymentScreen", "No user ID available")
         }
     }
 
@@ -276,10 +257,6 @@ fun PaymentScreen(
                 onDismiss = { showNetworkError = false }
             )
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 
     if (showErrorDialog) {
@@ -330,15 +307,15 @@ fun PaymentScreen(
 
     // Edit Dialog
     paymentToEdit?.let { paymentDetail ->
-    var editedCardNumber by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.cardNumber ?: "") }
-    var editedExpirationDate by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.expirationDate ?: "") }
-    var editedCardholderName by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.cardholderName ?: "") }
-    var editedCountry by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.country ?: "") }
-    var editedAddressLine1 by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.addressLine1 ?: "") }
-    var editedAddressLine2 by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.addressLine2 ?: "") }
-    var editedCity by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.city ?: "") }
-    var editedStateProvince by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.stateOrProvince ?: "") }
-    var editedPostalCode by rememberSaveable(paymentDetail.id) { mutableStateOf(paymentDetail.postalCode ?: "") }
+        var editedCardNumber by remember { mutableStateOf(paymentDetail.cardNumber ?: "") }
+        var editedExpirationDate by remember { mutableStateOf(paymentDetail.expirationDate ?: "") }
+        var editedCardholderName by remember { mutableStateOf(paymentDetail.cardholderName ?: "") }
+        var editedCountry by remember { mutableStateOf(paymentDetail.country ?: "") }
+        var editedAddressLine1 by remember { mutableStateOf(paymentDetail.addressLine1 ?: "") }
+        var editedAddressLine2 by remember { mutableStateOf(paymentDetail.addressLine2 ?: "") }
+        var editedCity by remember { mutableStateOf(paymentDetail.city ?: "") }
+        var editedStateProvince by remember { mutableStateOf(paymentDetail.stateOrProvince ?: "") }
+        var editedPostalCode by remember { mutableStateOf(paymentDetail.postalCode ?: "") }
 
         AlertDialog(
             onDismissRequest = { paymentToEdit = null },

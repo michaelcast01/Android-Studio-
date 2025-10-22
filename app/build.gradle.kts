@@ -8,7 +8,6 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
-    compileSdkVersion("android-36")
     compileSdk = 36
 
     defaultConfig {
@@ -25,10 +24,6 @@ android {
         getByName("debug") {
             // Habilitar logging en builds de debug
             buildConfigField("boolean", "LOGGING_ENABLED", "true")
-            // Optimizaciones para debug
-            isMinifyEnabled = false
-            isShrinkResources = false
-            isDebuggable = true
         }
         release {
             // Activar minificación y eliminación de recursos en release ayuda a reducir el tamaño del APK/AAB.
@@ -37,20 +32,10 @@ android {
             isShrinkResources = true
             // Desactivar logging en releases por seguridad y tamaño de log
             buildConfigField("boolean", "LOGGING_ENABLED", "false")
-            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-        // Crear build type intermedio para testing
-        create("staging") {
-            initWith(getByName("release"))
-            buildConfigField("boolean", "LOGGING_ENABLED", "true")
-            isDebuggable = true
-            isMinifyEnabled = false
-            isShrinkResources = false  // Debe ser false si minifyEnabled es false
-            applicationIdSuffix = ".staging"
         }
     }
     compileOptions {
@@ -62,15 +47,8 @@ android {
     }
     buildFeatures {
         compose = true
-        // Necesario para usar buildConfigField en buildTypes
-        buildConfig = true
-        // Deshabilitar features no usadas para mejorar build time
-        aidl = false
-        renderScript = false
-        resValues = false
-        shaders = false
-        viewBinding = false
-        dataBinding = false
+    // Necesario para usar buildConfigField en buildTypes
+    buildConfig = true
     }
     
     // Añadir configuración para manejar la advertencia de ashmem
@@ -150,23 +128,4 @@ dependencies {
     // Coil optimized
     implementation(libs.coil)
     implementation(libs.coil.compose)
-}
-
-android {
-    // Configuración de lint optimizada
-    lint {
-        checkReleaseBuilds = false
-        abortOnError = false
-        disable += "InvalidPackage"
-    }
-    
-    // Configuración para splits de APK (opcional)
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("x86", "x86_64", "arm64-v8a", "armeabi-v7a")
-            isUniversalApk = false
-        }
-    }
 }

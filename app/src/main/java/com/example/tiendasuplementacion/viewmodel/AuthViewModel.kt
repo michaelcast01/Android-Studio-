@@ -10,8 +10,6 @@ import com.example.tiendasuplementacion.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 const val ADMIN_ROLE = 2L  // Role ID 2 = Admin, Role ID 1 = User
 
@@ -25,9 +23,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
-
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
 
     init {
         // Restaurar la sesión al iniciar
@@ -46,7 +41,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _isAuthenticated.value = true
                 // Guardar la sesión
                 saveSession(user)
-                viewModelScope.launch { _events.emit(UiEvent.ShowSnackbar("Bienvenido ${user.username}")) }
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
@@ -55,7 +49,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     e.message ?: "Error al iniciar sesión"
                 }
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al iniciar sesión")) }
             }
         }
     }
@@ -72,12 +65,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _isAuthenticated.value = true
                 // Guardar la sesión
                 saveSession(user)
-                viewModelScope.launch { _events.emit(UiEvent.ShowSnackbar("Usuario registrado")) }
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
                 _error.value = e.message ?: "Error al registrar usuario"
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al registrar usuario")) }
             }
         }
     }

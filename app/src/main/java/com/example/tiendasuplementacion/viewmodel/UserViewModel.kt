@@ -7,8 +7,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import com.example.tiendasuplementacion.model.User
 import com.example.tiendasuplementacion.repository.UserRepository
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 class UserViewModel : ViewModel() {
     private val repository = UserRepository()
@@ -18,9 +16,6 @@ class UserViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
-
     fun fetchUsers() {
         viewModelScope.launch {
             try {
@@ -28,7 +23,6 @@ class UserViewModel : ViewModel() {
                 _users.value = repository.getAll()
             } catch (e: Exception) {
                 e.printStackTrace()
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error al obtener usuarios")) }
             } finally {
                 _isLoading.value = false
             }
@@ -42,7 +36,6 @@ class UserViewModel : ViewModel() {
                 fetchUsers()
             } catch (e: Exception) {
                 e.printStackTrace()
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error al crear usuario")) }
             }
         }
     }

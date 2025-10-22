@@ -7,8 +7,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import com.example.tiendasuplementacion.model.OrderDetail
 import com.example.tiendasuplementacion.repository.OrderDetailRepository
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 class OrderDetailViewModel : ViewModel() {
     private val repository = OrderDetailRepository()
@@ -22,9 +20,6 @@ class OrderDetailViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
-
     fun fetchOrderDetails() {
         viewModelScope.launch {
             try {
@@ -33,7 +28,6 @@ class OrderDetailViewModel : ViewModel() {
                 _details.value = repository.getAll()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al cargar los detalles del pedido"
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al cargar los detalles del pedido")) }
                 _details.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -50,7 +44,6 @@ class OrderDetailViewModel : ViewModel() {
                 fetchOrderDetails()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Error al crear el detalle del pedido"
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(_error.value ?: "Error al crear el detalle del pedido")) }
             } finally {
                 _isLoading.value = false
             }

@@ -15,8 +15,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 
 data class EmailVerificationRequest(
     val email: String,
@@ -66,9 +64,6 @@ class SettingViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _events = MutableSharedFlow<UiEvent>(replay = 0, extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
-
     private val _apiInfo = MutableStateFlow<EmailVerificationService?>(null)
     val apiInfo: StateFlow<EmailVerificationService?> = _apiInfo.asStateFlow()
 
@@ -78,7 +73,6 @@ class SettingViewModel : ViewModel() {
                 _settings.value = repository.getAll()
             } catch (e: Exception) {
                 _error.value = e.message
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error")) }
             }
         }
     }
@@ -89,7 +83,6 @@ class SettingViewModel : ViewModel() {
                 _settingDetail.value = repository.getDetailsById(id)
             } catch (e: Exception) {
                 _error.value = e.message
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error")) }
             }
         }
     }
@@ -100,7 +93,6 @@ class SettingViewModel : ViewModel() {
                 _availablePayments.value = repository.getAvailablePaymentMethods()
             } catch (e: Exception) {
                 _error.value = e.message
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error")) }
             }
         }
     }
@@ -113,7 +105,6 @@ class SettingViewModel : ViewModel() {
                 fetchSettingDetails(settingId)
             } catch (e: Exception) {
                 _error.value = e.message
-                viewModelScope.launch { _events.emit(UiEvent.ShowError(e.message ?: "Error")) }
             }
         }
     }

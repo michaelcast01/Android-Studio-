@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -31,9 +30,6 @@ import androidx.navigation.NavController
 import com.example.tiendasuplementacion.viewmodel.UserDetailViewModel
 import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import com.example.tiendasuplementacion.model.UserDetail
-import com.example.tiendasuplementacion.viewmodel.UiEvent
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import com.example.tiendasuplementacion.repository.OrderProductRepository
@@ -92,16 +88,15 @@ fun AdminClientsScreen(
     val userDetailsList by userDetailViewModel.userDetailsList.collectAsState(initial = emptyList())
     val isLoading by userDetailViewModel.isLoading.collectAsState(initial = false)
     val error by userDetailViewModel.error.collectAsState(initial = null)
-    var showNetworkError by rememberSaveable { mutableStateOf(false) }
-    var networkErrorMessage by rememberSaveable { mutableStateOf("") }
-    var selectedUserId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var sortBy by rememberSaveable { mutableStateOf(SortOption.RECENT_ACTIVITY) }
-    var showSortMenu by rememberSaveable { mutableStateOf(false) }
+    var showNetworkError by remember { mutableStateOf(false) }
+    var networkErrorMessage by remember { mutableStateOf("") }
+    var selectedUser by remember { mutableStateOf<UserDetail?>(null) }
+    var sortBy by remember { mutableStateOf(SortOption.RECENT_ACTIVITY) }
+    var showSortMenu by remember { mutableStateOf(false) }
     val orderProductRepository = remember { OrderProductRepository() }
     val haptic = LocalHapticFeedback.current
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         // Cargar usuarios con role_id = 1 (clientes/usuarios)
@@ -112,21 +107,6 @@ fun AdminClientsScreen(
         if (error != null && (error!!.contains("No se pudo conectar") || error!!.contains("599"))) {
             showNetworkError = true
             networkErrorMessage = error ?: ""
-        }
-    }
-
-    // Collect one-shot events
-    LaunchedEffect(Unit) {
-        userDetailViewModel.events.collect { event ->
-            when (event) {
-                is UiEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
-                is UiEvent.ShowError -> {
-                    showNetworkError = true
-                    networkErrorMessage = event.message
-                }
-                is UiEvent.Navigate -> navController.navigate(event.route) { launchSingleTop = true }
-                is UiEvent.NavigateBack -> navController.popBackStack()
-            }
         }
     }
 
@@ -160,7 +140,7 @@ fun AdminClientsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Controles de búsqueda y ordenamiento
-                var query by rememberSaveable { mutableStateOf("") }
+                var query by remember { mutableStateOf("") }
 
                 // Debounce idiomático usando snapshotFlow + produceState
                 val debouncedQuery by produceState(initialValue = "", key1 = query) {
@@ -270,18 +250,18 @@ fun AdminClientsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
-                                items(
-                                    items = processedList,
-                                    key = { it.id }
-                                ) { userDetail ->
-                                    OptimizedClientCard(
-                                        userDetail = userDetail,
-                                        onClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            selectedUserId = userDetail.id
-                                        }
-                                    )
+                        items(
+                            items = processedList,
+                            key = { it.id }
+                        ) { userDetail ->
+                            OptimizedClientCard(
+                                userDetail = userDetail,
+                                onClick = { 
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    selectedUser = userDetail 
                                 }
+                            )
+                        }
                         
                         // Indicador de fin de lista
                         item {
@@ -332,8 +312,6 @@ fun AdminClientsScreen(
                             CircularProgressIndicator(color = Color(0xFFF6E7DF))
                         }
                     }
-                    // Snackbar host for one-shot events
-                    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
                 }
             }
 
@@ -352,11 +330,10 @@ fun AdminClientsScreen(
             )
         }
 
-                // Diálogo optimizado de detalles del usuario
-        val selectedUser = remember(userDetailsList, selectedUserId) { selectedUserId?.let { id -> userDetailsList.find { it.id == id } } }
+        // Diálogo optimizado de detalles del usuario
         if (selectedUser != null) {
             AlertDialog(
-                onDismissRequest = { selectedUserId = null },
+                onDismissRequest = { selectedUser = null },
                 title = {
                     Text(
                         text = "Detalles del Cliente",
@@ -478,7 +455,7 @@ fun AdminClientsScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { selectedUserId = null }) {
+                    TextButton(onClick = { selectedUser = null }) {
                         Text("Cerrar")
                     }
                 },
