@@ -8,13 +8,11 @@ plugins {
 
 android {
     namespace = "com.example.tiendasuplementacion"
-    compileSdkVersion("android-36.1")
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.tiendasuplementacion"
         minSdk = 24
-        //noinspection OldTargetApi
-        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -66,6 +64,7 @@ android {
             excludes += "META-INF/ASL2.0"
         }
     }
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
