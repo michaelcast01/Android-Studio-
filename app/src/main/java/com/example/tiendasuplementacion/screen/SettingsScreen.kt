@@ -32,6 +32,8 @@ import com.example.tiendasuplementacion.component.NetworkErrorBanner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import kotlinx.coroutines.launch
+import android.util.Log
+import android.widget.Toast
 
 // Enumeración para secciones del perfil
 enum class ProfileSection(
@@ -116,7 +118,17 @@ fun SettingsScreen(
                 ProfileHeader(
                     currentUser = currentUser,
                     settingDetail = settingDetail,
-                    onEditProfile = { /* TODO: Implementar edición */ }
+                    onEditProfile = {
+                        try {
+                            Log.d("SettingsScreen", "Editar perfil pulsado. Intentando navegar a editProfile")
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            Toast.makeText(context, "Abrir edición de perfil...", Toast.LENGTH_SHORT).show()
+                            navController.navigate("editProfile")
+                        } catch (e: Exception) {
+                            Log.e("SettingsScreen", "Error al navegar a editProfile", e)
+                            Toast.makeText(context, "No se pudo abrir la edición: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
 

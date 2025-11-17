@@ -208,6 +208,7 @@ fun AppNavGraph(
                 composable("productForm") { ProductFormScreen(navController) }
                 composable("payment_config") { PaymentConfigScreen(navController) }
                 composable("settings") { SettingsScreen(navController, authViewModel = authViewModel) }
+                composable("editProfile") { EditProfileScreen(navController, authViewModel = authViewModel) }
                 composable(
                     route = "editProduct/{productId}",
                     arguments = listOf(navArgument("productId") { type = NavType.LongType })

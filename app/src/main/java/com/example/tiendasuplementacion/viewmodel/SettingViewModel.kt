@@ -105,6 +105,38 @@ class SettingViewModel : ViewModel() {
         }
     }
 
+    fun updateSetting(
+        settingId: Long,
+        name: String,
+        nickname: String,
+        phone: Long,
+        city: String,
+        address: String,
+        paymentId: Long,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val updatedSetting = Setting(
+                    id = settingId,
+                    payment_id = paymentId,
+                    name = name,
+                    nickname = nickname,
+                    phone = phone,
+                    city = city,
+                    address = address
+                )
+                repository.update(settingId, updatedSetting)
+                fetchSettingDetails(settingId)
+                onSuccess()
+            } catch (e: Exception) {
+                _error.value = e.message
+                onError(e.message ?: "Error desconocido al actualizar el perfil")
+            }
+        }
+    }
+
     suspend fun createSetting(setting: Setting): Setting {
         return try {
             repository.create(setting)
