@@ -87,8 +87,8 @@ fun ProductScreen(
     var networkErrorMessage by remember { mutableStateOf("") }
     val isAdmin by remember { derivedStateOf { currentUser?.role_id == ADMIN_ROLE } }
 
-    LaunchedEffect(Unit) {
-        productViewModel.fetchProducts()
+    LaunchedEffect(isAdmin) {
+        productViewModel.fetchProducts(includeDisabled = isAdmin)
         categoryProductViewModel.fetchAll()
         categoryViewModel.fetchCategories()
     }
@@ -147,12 +147,18 @@ fun ProductScreen(
                 }
                 is com.example.tiendasuplementacion.viewmodel.UiState.Success -> {
                     val list = (productsUiState as com.example.tiendasuplementacion.viewmodel.UiState.Success).data as List<Product>
+                    Log.d("ProductScreen", "Total productos recibidos: ${list.size}")
+                    Log.d("ProductScreen", "Productos habilitados: ${list.count { it.enabled }}")
+                    Log.d("ProductScreen", "Productos deshabilitados: ${list.count { !it.enabled }}")
+                    Log.d("ProductScreen", "Es admin: $isAdmin")
+                    val filteredList = if (isAdmin) list else list.filter { it.enabled }
+                    Log.d("ProductScreen", "Productos mostrados: ${filteredList.size}")
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         contentPadding = PaddingValues(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                            items(items = list, key = { it.id }) { product: Product ->
+                            items(items = filteredList, key = { it.id }) { product: Product ->
                             ProductCard(
                                 product = product,
                                 onAddToCart = {
@@ -178,7 +184,8 @@ fun ProductScreen(
                                 categories = categories,
                                 isAdmin = isAdmin,
                                 navController = navController,
-                                imageLoader = imageLoader
+                                imageLoader = imageLoader,
+                                productViewModel = productViewModel
                             )
                         }
                     }
@@ -191,7 +198,7 @@ fun ProductScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(text = msg, color = Color(0xFFF6E7DF).copy(alpha = 0.8f))
                             Spacer(modifier = Modifier.height(12.dp))
-                            Button(onClick = { productViewModel.fetchProducts() }) {
+                            Button(onClick = { productViewModel.fetchProducts(includeDisabled = isAdmin) }) {
                                 Text("Reintentar")
                             }
                         }
@@ -233,7 +240,7 @@ fun ProductScreen(
                 message = networkErrorMessage,
                 onRetry = {
                     showNetworkError = false
-                    productViewModel.fetchProducts()
+                    productViewModel.fetchProducts(includeDisabled = isAdmin)
                 },
                 onDismiss = { showNetworkError = false }
             )
@@ -256,7 +263,8 @@ fun ProductCard(
     categories: List<Category>,
     isAdmin: Boolean = false,
     navController: NavController,
-    imageLoader: ImageLoader
+    imageLoader: ImageLoader,
+    productViewModel: ProductViewModel = viewModel()
 ) {
     val isOutOfStock = product.stock <= 0
     val categoryProduct = remember(categoryProducts, product.id) { categoryProducts.find { it.product_id == product.id } }
@@ -269,7 +277,6 @@ fun ProductCard(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showProductDetails by remember { mutableStateOf(false) }
     var isAdding by remember { mutableStateOf(false) }
-    val productViewModel: ProductViewModel = viewModel()
 
     if (showDeleteConfirmation) {
         AlertDialog(
@@ -428,6 +435,13 @@ fun ProductCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isOutOfStock) Color(0xFFD32F2F) else Color(0xFFF6E7DF).copy(alpha = 0.7f)
             )
+            if (isAdmin) {
+                Text(
+                    text = if (product.enabled) "Estado: Habilitado" else "Estado: Deshabilitado",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (product.enabled) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -485,6 +499,21 @@ fun ProductCard(
                             )
                         }
                     }
+                }
+            }
+            if (isAdmin) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { productViewModel.toggleProductEnabled(product.id, includeDisabled = true) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (product.enabled) Color(0xFFFF9800) else Color(0xFF4CAF50)
+                    )
+                ) {
+                    Text(
+                        text = if (product.enabled) "Deshabilitar" else "Habilitar",
+                        color = Color.White
+                    )
                 }
             }
         }

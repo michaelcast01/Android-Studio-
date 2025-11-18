@@ -23,12 +23,12 @@ class ProductViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<UiState<List<Product>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Product>>> = _uiState.asStateFlow()
 
-    fun fetchProducts() {
+    fun fetchProducts(includeDisabled: Boolean = false) {
         viewModelScope.launch {
             _isLoading.value = true
             _uiState.value = UiState.Loading
             try {
-                val list = repository.getAll()
+                val list = repository.getAll(if (includeDisabled) true else null)
                 _products.value = list
                 _error.value = null
                 _uiState.value = UiState.Success(list)
@@ -103,6 +103,18 @@ class ProductViewModel : ViewModel() {
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Error al actualizar el producto: ${e.message}"
+            }
+        }
+    }
+
+    fun toggleProductEnabled(id: Long, includeDisabled: Boolean = false) {
+        viewModelScope.launch {
+            try {
+                repository.toggleEnabled(id)
+                fetchProducts(includeDisabled)
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error al cambiar el estado del producto: ${e.message}"
             }
         }
     }

@@ -5,7 +5,7 @@ import retrofit2.http.*
 
 interface ProductApiService {
     @GET("/api/products")
-    suspend fun getAll(): List<Product>
+    suspend fun getAll(@Query("include_disabled") includeDisabled: Boolean? = null): List<Product>
 
     @GET("/api/products/{id}")
     suspend fun getById(@Path("id") id: Long): Product
@@ -18,4 +18,7 @@ interface ProductApiService {
 
     @DELETE("/api/products/{id}")
     suspend fun delete(@Path("id") id: Long)
+
+    @PATCH("/api/products/{id}/toggle-enabled")
+    suspend fun toggleEnabled(@Path("id") id: Long): Product
 }

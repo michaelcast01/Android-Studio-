@@ -6,5 +6,6 @@ data class Product(
     val description: String,
     val price: Double,
     val stock: Int,
-    val url_image: String
+    val url_image: String,
+    val enabled: Boolean = true
 )
