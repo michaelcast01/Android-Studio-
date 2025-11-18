@@ -56,7 +56,7 @@ fun CartScreen(
         }
     }
     
-    // Persistir carrito automáticamente
+    // Persistir carrito automáticamente.
     LaunchedEffect(cartItems) {
         if (cartItems.isNotEmpty()) {
             try {
