@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
@@ -86,6 +89,33 @@ fun ProductScreen(
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     val isAdmin by remember { derivedStateOf { currentUser?.role_id == ADMIN_ROLE } }
+    
+    // Estados para la búsqueda
+    var searchText by remember { mutableStateOf("") }
+
+    // Función para filtrar productos (siempre busca en nombre y en categorías)
+    val filteredProducts by remember(products, searchText, categoryProducts, categories) {
+        derivedStateOf {
+            val baseList = if (isAdmin) products else products.filter { it.enabled }
+
+            if (searchText.isBlank()) {
+                baseList
+            } else {
+                baseList.filter { product ->
+                    // Buscar por nombre de producto
+                    val matchesProductName = product.name.contains(searchText, ignoreCase = true)
+
+                    // Buscar por categoría
+                    val matchesCategory = categoryProducts
+                        .filter { it.product_id == product.id }
+                        .mapNotNull { relation -> categories.find { it.id == relation.category_id } }
+                        .any { category -> category.name.contains(searchText, ignoreCase = true) }
+
+                    matchesProductName || matchesCategory
+                }
+            }
+        }
+    }
 
     LaunchedEffect(isAdmin) {
         productViewModel.fetchProducts(includeDisabled = isAdmin)
@@ -117,6 +147,62 @@ fun ProductScreen(
                 color = Color(0xFFF6E7DF),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+
+            // Barra de búsqueda
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF26272B)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // (Selector eliminado) Búsqueda única que incluye producto y categoría
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Campo de búsqueda
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        placeholder = { 
+                            Text(
+                                text = "Buscar producto o categoría...",
+                                color = Color(0xFFF6E7DF).copy(alpha = 0.6f)
+                            ) 
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = Color(0xFFF6E7DF)
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchText.isNotEmpty()) {
+                                IconButton(onClick = { searchText = "" }) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "Limpiar búsqueda",
+                                        tint = Color(0xFFF6E7DF)
+                                    )
+                                }
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFFF6E7DF),
+                            unfocusedTextColor = Color(0xFFF6E7DF),
+                            focusedBorderColor = Color(0xFFF6E7DF),
+                            unfocusedBorderColor = Color(0xFFF6E7DF).copy(alpha = 0.7f),
+                            cursorColor = Color(0xFFF6E7DF)
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            }
 
             when (productsUiState) {
                 is com.example.tiendasuplementacion.viewmodel.UiState.Loading -> {
@@ -151,14 +237,48 @@ fun ProductScreen(
                     Log.d("ProductScreen", "Productos habilitados: ${list.count { it.enabled }}")
                     Log.d("ProductScreen", "Productos deshabilitados: ${list.count { !it.enabled }}")
                     Log.d("ProductScreen", "Es admin: $isAdmin")
-                    val filteredList = if (isAdmin) list else list.filter { it.enabled }
-                    Log.d("ProductScreen", "Productos mostrados: ${filteredList.size}")
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                            items(items = filteredList, key = { it.id }) { product: Product ->
+                    Log.d("ProductScreen", "Productos filtrados: ${filteredProducts.size}")
+                    Log.d("ProductScreen", "Texto búsqueda: '$searchText'")
+                    
+                    if (filteredProducts.isEmpty() && searchText.isNotEmpty()) {
+                        // Mostrar mensaje cuando no hay resultados de búsqueda
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = Color(0xFFF6E7DF).copy(alpha = 0.6f),
+                                    modifier = Modifier.size(64.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No se encontraron productos que coincidan con '$searchText'",
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.8f),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Intenta con otro nombre de producto o categoría",
+                                    color = Color(0xFFF6E7DF).copy(alpha = 0.6f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            items(items = filteredProducts, key = { it.id }) { product: Product ->
                             ProductCard(
                                 product = product,
                                 onAddToCart = {
@@ -188,6 +308,7 @@ fun ProductScreen(
                                 productViewModel = productViewModel
                             )
                         }
+                    }
                     }
                 }
                 is com.example.tiendasuplementacion.viewmodel.UiState.Error -> {
