@@ -151,7 +151,7 @@ class SettingViewModel : ViewModel() {
                 val request = EmailVerificationRequest(
                     email = email,
                     callback = CallbackConfig(
-                        url = "http://localhost:8080/api/email-verification/callback",
+                        url = "https://suplements-v1.fly.dev/api/email-verification/callback",
                         method = "POST",
                         headers = mapOf(
                             "authorization" to "3a71KlUgY833X5vBkHOsM6YjgPfbqZ6d4HNiBn7q",

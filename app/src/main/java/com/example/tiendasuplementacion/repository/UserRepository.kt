@@ -16,10 +16,15 @@ class UserRepository {
     suspend fun delete(id: Long) = service.deleteUser(id)
 
     suspend fun login(email: String, password: String): User {
-        val credentials = mapOf(
-            "email" to email,
-            "password" to password
-        )
-        return service.login(credentials).user
+        return try {
+            val credentials = mapOf(
+                "email" to email,
+                "password" to password
+            )
+            service.login(credentials).user
+        } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Error en login: ${e.message}", e)
+            throw Exception("Error al iniciar sesión: ${e.localizedMessage ?: e.message}")
+        }
     }
 }

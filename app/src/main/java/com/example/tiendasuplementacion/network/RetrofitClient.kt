@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
     private const val TAG = "RetrofitClient"
 
-    // Configuraci9n de la URL base (dev por defecto)
-    private const val BASE_URL = "http://10.0.2.2:8080/" // Asegrate de que termine con /
+    // Configuración de la URL base - PC en red local
+    private const val BASE_URL = "https://suplements-v1.fly.dev/"
     private const val TIMEOUT_SECONDS = 15L // Reducido de 30 segundos a 15 segundos para redes rápidas
     private const val HTTP_CACHE_SIZE: Long = 10L * 1024L * 1024L // 10 MB
 
@@ -38,6 +38,17 @@ object RetrofitClient {
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+
+        // Añadir headers comunes para todas las requests
+        builder.addInterceptor { chain ->
+            val originalRequest = chain.request()
+            val newRequest = originalRequest.newBuilder()
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header("User-Agent", "TiendaSuplementacion-Android/1.0")
+                .build()
+            chain.proceed(newRequest)
+        }
 
         // Añadir logging solo en DEBUG (definido arriba)
         builder.addInterceptor(loggingInterceptor)

@@ -99,6 +99,15 @@ fun LoginScreen(
         }
     }
 
+    // Navegar automáticamente cuando el login sea exitoso
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated == true) {
+            navController.navigate("products") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
     // Función para hacer polling del estado de verificación
     fun pollVerificationStatus(verificationId: String) {
         scope.launch {
@@ -184,7 +193,7 @@ fun LoginScreen(
                 
                 val response = settingViewModel.startEmailVerification(
                     email = email,
-                    callbackUrl = "http://localhost:8080/api/email-verification/callback"
+                    callbackUrl = "https://suplements-8zcw.onrender.com/api/email-verification/callback"
                 )
                 
                 Log.d("LoginScreen", "Respuesta de startEmailVerification: $response")
