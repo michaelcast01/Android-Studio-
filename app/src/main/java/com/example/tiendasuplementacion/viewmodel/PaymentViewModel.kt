@@ -9,35 +9,101 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 
+/**
+ * ViewModel optimizado para gestión de pagos con caché y estados mejorados
+ */
 class PaymentViewModel : ViewModel() {
     private val repository = PaymentRepository()
+    
+    // LiveData para métodos de pago
     private val _payments = MutableLiveData<List<Payment>>()
     val payments: LiveData<List<Payment>> = _payments
 
+    // LiveData para detalles de pago
     private val _paymentDetails = MutableLiveData<List<PaymentDetail>>()
     val paymentDetails: LiveData<List<PaymentDetail>> = _paymentDetails
 
+    // StateFlow para estado UI de detalles de pago
     private val _paymentDetailsUiState = MutableStateFlow<UiState<List<PaymentDetail>>>(UiState.Loading)
     val paymentDetailsUiState: StateFlow<UiState<List<PaymentDetail>>> = _paymentDetailsUiState.asStateFlow()
 
+    // Estados de carga y error
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    // Caché de pagos para evitar llamadas innecesarias
+    private var paymentsCache: List<Payment>? = null
+    private var paymentsCacheTimestamp: Long = 0
+    private val CACHE_VALIDITY_MS = 5 * 60 * 1000L // 5 minutos
+
+    // Estado de operaciones exitosas
+    private val _operationSuccess = MutableStateFlow<OperationResult?>(null)
+    val operationSuccess: StateFlow<OperationResult?> = _operationSuccess.asStateFlow()
+
     init {
         fetchPayments()
     }
 
-    fun fetchPayments() {
+    /**
+     * Resultado de operaciones
+     */
+    data class OperationResult(
+        val type: OperationType,
+        val success: Boolean,
+        val message: String? = null
+    )
+
+    enum class OperationType {
+        CREATE, UPDATE, DELETE, SAVE_DETAIL
+    }
+
+    /**
+     * Verifica si el caché es válido
+     */
+    private fun isCacheValid(): Boolean {
+        return paymentsCache != null && 
+               (System.currentTimeMillis() - paymentsCacheTimestamp) < CACHE_VALIDITY_MS
+    }
+
+    /**
+     * Invalida el caché
+     */
+    fun invalidateCache() {
+        paymentsCache = null
+        paymentsCacheTimestamp = 0
+    }
+
+    /**
+     * Obtiene todos los métodos de pago disponibles con caché
+     */
+    fun fetchPayments(forceRefresh: Boolean = false) {
+        // Si tenemos caché válido y no se fuerza el refresh, usarlo
+        if (!forceRefresh && isCacheValid()) {
+            _payments.value = paymentsCache
+            Log.d("PaymentViewModel", "Usando caché de pagos")
+            return
+        }
+
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = null
-                _payments.value = repository.getAll()
+                
+                val fetchedPayments = repository.getAll()
+                
+                // Actualizar caché
+                paymentsCache = fetchedPayments
+                paymentsCacheTimestamp = System.currentTimeMillis()
+                
+                _payments.value = fetchedPayments
+                Log.d("PaymentViewModel", "Pagos cargados: ${fetchedPayments.size}")
             } catch (e: Exception) {
+                Log.e("PaymentViewModel", "Error al cargar pagos", e)
                 _error.value = e.message ?: "Error al cargar los métodos de pago"
                 _payments.value = emptyList()
             } finally {
@@ -46,17 +112,46 @@ class PaymentViewModel : ViewModel() {
         }
     }
 
-    fun createPayment(payment: Payment) {
+    /**
+     * Crea un nuevo método de pago con validación
+     */
+    fun createPayment(payment: Payment, onSuccess: (() -> Unit)? = null) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = null
+                
+                // Validación básica
+                if (payment.name.isBlank()) {
+                    throw IllegalArgumentException("El nombre del método de pago no puede estar vacío")
+                }
+                
                 val createdPayment = repository.create(payment)
+                
+                // Actualización optimista
                 val currentList = _payments.value?.toMutableList() ?: mutableListOf()
                 currentList.add(createdPayment)
                 _payments.value = currentList
+                
+                // Invalidar caché para forzar recarga
+                invalidateCache()
+                
+                _operationSuccess.value = OperationResult(
+                    type = OperationType.CREATE,
+                    success = true,
+                    message = "Método de pago creado exitosamente"
+                )
+                
+                Log.d("PaymentViewModel", "Método de pago creado: ${createdPayment.name}")
+                onSuccess?.invoke()
             } catch (e: Exception) {
+                Log.e("PaymentViewModel", "Error al crear método de pago", e)
                 _error.value = e.message ?: "Error al crear el método de pago"
+                _operationSuccess.value = OperationResult(
+                    type = OperationType.CREATE,
+                    success = false,
+                    message = e.message
+                )
             } finally {
                 _isLoading.value = false
             }
@@ -106,51 +201,125 @@ class PaymentViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Limpia el mensaje de error
+     */
     fun clearError() {
         _error.value = null
     }
 
+    /**
+     * Limpia el resultado de la operación
+     */
+    fun clearOperationResult() {
+        _operationSuccess.value = null
+    }
+
+    /**
+     * Obtiene un método de pago por su ID
+     */
     fun getPaymentById(paymentId: Long): Payment? {
         return payments.value?.find { it.id == paymentId }
     }
 
-    // A small in-memory cache to hold the last selected PaymentDetail so we can avoid
-    // re-fetching immediately after the user selects a payment method and we navigate.
+    /**
+     * Obtiene métodos de pago activos
+     */
+    fun getActivePayments(): List<Payment> {
+        return payments.value?.filter { it.isActive } ?: emptyList()
+    }
+
+    /**
+     * Caché del detalle de pago seleccionado para evitar re-fetcheos innecesarios
+     */
     private val _selectedPaymentDetail = MutableLiveData<PaymentDetail?>()
     val selectedPaymentDetail: LiveData<PaymentDetail?> = _selectedPaymentDetail
 
+    /**
+     * Establece el detalle de pago seleccionado
+     */
     fun setSelectedPaymentDetail(paymentDetail: PaymentDetail?) {
         _selectedPaymentDetail.value = paymentDetail
+        Log.d("PaymentViewModel", "Selected payment detail set: ${paymentDetail?.id}")
     }
 
+    /**
+     * Limpia el detalle de pago seleccionado
+     */
     fun clearSelectedPaymentDetail() {
         _selectedPaymentDetail.value = null
     }
 
+    /**
+     * Guarda los detalles de pago con validación mejorada
+     */
     suspend fun savePaymentDetail(paymentDetail: PaymentDetail): Boolean {
         Log.d("PaymentViewModel", "Attempting to save payment detail: $paymentDetail")
         Log.d("PaymentViewModel", "Payment ID: ${paymentDetail.payment_id}")
         Log.d("PaymentViewModel", "User ID: ${paymentDetail.user_id}")
-        Log.d("PaymentViewModel", "Card details: ${paymentDetail.cardNumber}, ${paymentDetail.expirationDate}, ${paymentDetail.cvc}")
-        Log.d("PaymentViewModel", "Address details: ${paymentDetail.country}, ${paymentDetail.addressLine1}, ${paymentDetail.city}")
         
         return try {
             _isLoading.value = true
             _error.value = null
+            
+            // Validación de campos requeridos
+            validatePaymentDetail(paymentDetail)
+            
+            // Log de detalles sensibles solo en debug
+            if (paymentDetail.cardNumber != null) {
+                Log.d("PaymentViewModel", "Card ending in: ${paymentDetail.cardNumber?.takeLast(4)}")
+            }
+            Log.d("PaymentViewModel", "Address: ${paymentDetail.country}, ${paymentDetail.city}")
+            
             val savedPaymentDetail = repository.savePaymentDetail(paymentDetail)
-            Log.d("PaymentViewModel", "Successfully saved payment detail. Response: $savedPaymentDetail")
+            Log.d("PaymentViewModel", "Successfully saved payment detail. ID: ${savedPaymentDetail.id}")
+            
+            // Actualización optimista
             val currentList = _paymentDetails.value?.toMutableList() ?: mutableListOf()
             currentList.add(savedPaymentDetail)
             _paymentDetails.value = currentList
             _paymentDetailsUiState.value = UiState.Success(currentList)
+            
+            _operationSuccess.value = OperationResult(
+                type = OperationType.SAVE_DETAIL,
+                success = true,
+                message = "Método de pago configurado exitosamente"
+            )
+            
             true
+        } catch (e: IllegalArgumentException) {
+            Log.e("PaymentViewModel", "Validation error", e)
+            _error.value = e.message
+            _paymentDetailsUiState.value = UiState.Error(e.message ?: "Error de validación")
+            false
         } catch (e: Exception) {
             Log.e("PaymentViewModel", "Error saving payment detail", e)
             _error.value = e.message ?: "Error al guardar los detalles del método de pago"
-            _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar los detalles del método de pago")
+            _paymentDetailsUiState.value = UiState.Error(_error.value ?: "Error al guardar")
             false
         } finally {
             _isLoading.value = false
+        }
+    }
+
+    /**
+     * Valida los detalles de pago antes de guardar
+     */
+    private fun validatePaymentDetail(paymentDetail: PaymentDetail) {
+        require(paymentDetail.payment_id > 0) { "ID de pago inválido" }
+        require(paymentDetail.user_id > 0) { "ID de usuario inválido" }
+        require(!paymentDetail.country.isNullOrBlank()) { "El país es requerido" }
+        require(!paymentDetail.addressLine1.isNullOrBlank()) { "La dirección es requerida" }
+        require(!paymentDetail.city.isNullOrBlank()) { "La ciudad es requerida" }
+        require(!paymentDetail.stateOrProvince.isNullOrBlank()) { "El estado/provincia es requerido" }
+        require(!paymentDetail.postalCode.isNullOrBlank()) { "El código postal es requerido" }
+        
+        // Si el pago requiere tarjeta, validar campos de tarjeta
+        if (paymentDetail.payment.requiresCardInfo()) {
+            require(!paymentDetail.cardNumber.isNullOrBlank()) { "El número de tarjeta es requerido" }
+            require(!paymentDetail.expirationDate.isNullOrBlank()) { "La fecha de expiración es requerida" }
+            require(!paymentDetail.cvc.isNullOrBlank()) { "El CVC es requerido" }
+            require(!paymentDetail.cardholderName.isNullOrBlank()) { "El nombre del titular es requerido" }
         }
     }
 
