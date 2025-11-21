@@ -380,7 +380,7 @@ fun AdminClientsScreen(
                             InfoRow("Ciudad", settings.city)
                             InfoRow("Dirección", settings.address)
 
-                            if (settings.payments.isNotEmpty()) {
+                            if (!settings.payments.isNullOrEmpty()) {
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     text = "Métodos de Pago",
@@ -624,10 +624,9 @@ fun OptimizedOrderCard(
                             val calculatedTotal = remember(orderProducts) {
                                 orderProducts.sumOf { productDetail ->
                                     val price = when {
+                                        productDetail.unitPrice != null && productDetail.unitPrice > 0 -> productDetail.unitPrice
                                         productDetail.price > 0 -> productDetail.price
-                                        productDetail.product.price > 0 -> {
-                                            try { productDetail.product.price.toDouble() } catch (e: Exception) { 0.0 }
-                                        }
+                                        productDetail.product.price > 0 -> productDetail.product.price
                                         else -> 0.0
                                     }
                                     price * productDetail.quantity
@@ -645,13 +644,12 @@ fun OptimizedOrderCard(
                         }
                         
                         // Nota comparativa si hay discrepancia
-                        val orderTotal = try { order.total.toDouble() } catch (e: Exception) { 0.0 }
+                        val orderTotal = order.total
                         val calculatedTotal = orderProducts.sumOf { productDetail ->
                             val price = when {
+                                productDetail.unitPrice != null && productDetail.unitPrice > 0 -> productDetail.unitPrice
                                 productDetail.price > 0 -> productDetail.price
-                                productDetail.product.price > 0 -> {
-                                    try { productDetail.product.price.toDouble() } catch (e: Exception) { 0.0 }
-                                }
+                                productDetail.product.price > 0 -> productDetail.product.price
                                 else -> 0.0
                             }
                             price * productDetail.quantity
@@ -699,18 +697,14 @@ fun ProductRowCompact(productDetail: OrderProductDetail) {
     // Calcular precio inteligente con fallbacks
     val effectivePrice = remember(productDetail) {
         when {
-            // Si el precio del detalle del pedido es válido, usarlo
+            // Prioridad 1: usar unitPrice del endpoint si está disponible
+            productDetail.unitPrice != null && productDetail.unitPrice > 0 -> productDetail.unitPrice
+            // Prioridad 2: usar price del detalle del pedido si es válido
             productDetail.price > 0 -> productDetail.price
-            // Si no, usar el precio actual del producto
-            productDetail.product.price > 0 -> productDetail.product.price.toDouble()
-            // Fallback: calcular desde el precio de stock si existe
-            else -> {
-                try {
-                    productDetail.product.price.toDouble()
-                } catch (e: Exception) {
-                    0.0
-                }
-            }
+            // Prioridad 3: usar el precio del producto
+            productDetail.product.price > 0 -> productDetail.product.price
+            // Fallback: 0.0
+            else -> 0.0
         }
     }
     

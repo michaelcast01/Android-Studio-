@@ -23,7 +23,7 @@ data class Settings(
     val phone: Long,
     val city: String,
     val address: String,
-    val payments: List<PaymentMethod>
+    val payments: List<PaymentMethod>? = null
 )
 
 data class PaymentMethod(
