@@ -83,16 +83,22 @@ data class ClientStats(
 @Composable
 fun AdminClientsScreen(
     navController: NavController,
-    userDetailViewModel: UserDetailViewModel = viewModel()
+    userDetailViewModel: UserDetailViewModel = viewModel(),
+    userViewModel: com.example.tiendasuplementacion.viewmodel.UserViewModel = viewModel()
 ) {
     val userDetailsList by userDetailViewModel.userDetailsList.observeAsState(emptyList())
     val isLoading by userDetailViewModel.isLoading.observeAsState(false)
     val error by userDetailViewModel.error.observeAsState()
+    val users by userViewModel.users.observeAsState(emptyList())
+    val toggleSuccess by userViewModel.toggleSuccess.observeAsState(false)
+    val userError by userViewModel.error.observeAsState()
+    
     var showNetworkError by remember { mutableStateOf(false) }
     var networkErrorMessage by remember { mutableStateOf("") }
     var selectedUser by remember { mutableStateOf<UserDetail?>(null) }
     var sortBy by remember { mutableStateOf(SortOption.RECENT_ACTIVITY) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showToggleConfirmDialog by remember { mutableStateOf(false) }
     val orderProductRepository = remember { OrderProductRepository() }
     val haptic = LocalHapticFeedback.current
     val listState = rememberLazyListState()
@@ -101,12 +107,22 @@ fun AdminClientsScreen(
     LaunchedEffect(Unit) {
         // Cargar usuarios con role_id = 1 (clientes/usuarios)
         userDetailViewModel.fetchUserDetailsByRole(1L)
+        userViewModel.fetchUsers()
     }
 
     LaunchedEffect(error) {
         if (error != null && (error!!.contains("No se pudo conectar") || error!!.contains("599"))) {
             showNetworkError = true
             networkErrorMessage = error ?: ""
+        }
+    }
+
+    // Mostrar resultado del toggle
+    LaunchedEffect(toggleSuccess) {
+        if (toggleSuccess) {
+            // Recargar la lista después de cambiar el estado
+            userDetailViewModel.fetchUserDetailsByRole(1L)
+            selectedUser = null
         }
     }
 
@@ -259,7 +275,8 @@ fun AdminClientsScreen(
                                 onClick = { 
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     selectedUser = userDetail 
-                                }
+                                },
+                                userViewModel = userViewModel
                             )
                         }
                         
@@ -361,6 +378,47 @@ fun AdminClientsScreen(
                         InfoRow("Usuario", selectedUser?.username ?: "")
                         InfoRow("Email", selectedUser?.email ?: "")
                         InfoRow("Rol", selectedUser?.role?.name ?: "USER")
+                        
+                        // Mostrar estado del usuario
+                        selectedUser?.let { user ->
+                            val userEnabled = users.find { it.id == user.id }?.enabled ?: true
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Estado:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Surface(
+                                    color = if (userEnabled) Color(0xFF4CAF50) else Color(0xFFf44336),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            if (userEnabled) Icons.Default.CheckCircle else Icons.Default.Block,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Text(
+                                            text = if (userEnabled) "Activo" else "Deshabilitado",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
                         selectedUser?.settings?.let { settings ->
                             Spacer(modifier = Modifier.height(12.dp))
@@ -455,14 +513,79 @@ fun AdminClientsScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { selectedUser = null }) {
-                        Text("Cerrar")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Botón para habilitar/deshabilitar usuario
+                        selectedUser?.let { user ->
+                            val userEnabled = users.find { it.id == user.id }?.enabled ?: true
+                            Button(
+                                onClick = { showToggleConfirmDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (userEnabled) Color(0xFFf44336) else Color(0xFF4CAF50)
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = if (userEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (userEnabled) "Deshabilitar" else "Habilitar")
+                            }
+                        }
+                        
+                        TextButton(onClick = { selectedUser = null }) {
+                            Text("Cerrar")
+                        }
                     }
                 },
                 containerColor = Color.White,
                 titleContentColor = Color(0xFF1A1A1A),
                 textContentColor = Color(0xFF1A1A1A),
                 modifier = Modifier.fillMaxWidth(0.95f) // Usar más ancho de pantalla
+            )
+        }
+        
+        // Diálogo de confirmación para habilitar/deshabilitar
+        if (showToggleConfirmDialog && selectedUser != null) {
+            val userEnabled = users.find { it.id == selectedUser?.id }?.enabled ?: true
+            AlertDialog(
+                onDismissRequest = { showToggleConfirmDialog = false },
+                title = {
+                    Text(
+                        text = if (userEnabled) "¿Deshabilitar Usuario?" else "¿Habilitar Usuario?",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = if (userEnabled) 
+                            "El usuario ${selectedUser?.username} no podrá iniciar sesión si lo deshabilitas." 
+                        else 
+                            "El usuario ${selectedUser?.username} podrá iniciar sesión nuevamente."
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            selectedUser?.let { user ->
+                                userViewModel.toggleUserEnabled(user.id)
+                            }
+                            showToggleConfirmDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (userEnabled) Color(0xFFf44336) else Color(0xFF4CAF50)
+                        )
+                    ) {
+                        Text(if (userEnabled) "Deshabilitar" else "Habilitar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showToggleConfirmDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
             )
         }
     }
@@ -886,14 +1009,18 @@ fun StatChip(
 @Composable
 fun OptimizedClientCard(
     userDetail: UserDetail,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    userViewModel: com.example.tiendasuplementacion.viewmodel.UserViewModel = viewModel()
 ) {
     val stats = rememberClientStats(userDetail)
+    val users by userViewModel.users.observeAsState(emptyList())
+    val userEnabled = users.find { it.id == userDetail.id }?.enabled ?: true
+    var showToggleDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
             .clip(RoundedCornerShape(12.dp)),
         elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(
@@ -906,12 +1033,18 @@ fun OptimizedClientCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header con info principal
+            // Header con info principal y botón de acción
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
+                // Información del usuario - clickeable para ver detalles
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onClick() }
+                ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = userDetail.username,
@@ -939,21 +1072,78 @@ fun OptimizedClientCard(
                             )
                         }
                     }
+                    
+                    // Indicador de estado habilitado/deshabilitado
+                    if (!userEnabled) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            color = Color(0xFFf44336),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Block,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = "Deshabilitado",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
                 
-                // Status indicator
-                val statusColor = when {
-                    stats.totalOrders == 0 -> Color(0xFF757575)
-                    stats.lastOrderDate.contains("2025-09") -> Color(0xFF4CAF50)
-                    stats.totalOrders > 5 -> Color(0xFF2196F3)
-                    else -> Color(0xFFFF9800)
+                // Columna de acciones (status + botón)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Status indicator
+                    val statusColor = when {
+                        !userEnabled -> Color(0xFFf44336) // Rojo si está deshabilitado
+                        stats.totalOrders == 0 -> Color(0xFF757575)
+                        stats.lastOrderDate.contains("2025-09") -> Color(0xFF4CAF50)
+                        stats.totalOrders > 5 -> Color(0xFF2196F3)
+                        else -> Color(0xFFFF9800)
+                    }
+                    
+                    Surface(
+                        color = statusColor,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.size(12.dp)
+                    ) {}
+                    
+                    // Botón de toggle enabled/disabled
+                    IconButton(
+                        onClick = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            showToggleDialog = true 
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                color = if (userEnabled) Color(0xFFf44336).copy(alpha = 0.15f) 
+                                       else Color(0xFF4CAF50).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = if (userEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
+                            contentDescription = if (userEnabled) "Deshabilitar usuario" else "Habilitar usuario",
+                            tint = if (userEnabled) Color(0xFFf44336) else Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
-                
-                Surface(
-                    color = statusColor,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.size(12.dp)
-                ) {}
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -995,6 +1185,56 @@ fun OptimizedClientCard(
                 }
             }
         }
+    }
+    
+    // Diálogo de confirmación para toggle desde la tarjeta
+    if (showToggleDialog) {
+        AlertDialog(
+            onDismissRequest = { showToggleDialog = false },
+            title = {
+                Text(
+                    text = if (userEnabled) "¿Deshabilitar Usuario?" else "¿Habilitar Usuario?",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1A1A1A)
+                )
+            },
+            text = {
+                Text(
+                    text = if (userEnabled) 
+                        "El usuario ${userDetail.username} no podrá iniciar sesión si lo deshabilitas." 
+                    else 
+                        "El usuario ${userDetail.username} podrá iniciar sesión nuevamente.",
+                    color = Color(0xFF1A1A1A)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        userViewModel.toggleUserEnabled(userDetail.id)
+                        showToggleDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (userEnabled) Color(0xFFf44336) else Color(0xFF4CAF50)
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (userEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (userEnabled) "Deshabilitar" else "Habilitar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showToggleDialog = false }
+                ) {
+                    Text("Cancelar", color = Color(0xFF1A1A1A))
+                }
+            },
+            containerColor = Color.White
+        )
     }
 }
 

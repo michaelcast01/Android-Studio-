@@ -37,6 +37,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     throw Exception("Por favor complete todos los campos")
                 }
                 val user = repository.login(email, password)
+                
+                // Validar si el usuario está habilitado
+                if (!user.enabled) {
+                    _isAuthenticated.value = false
+                    _currentUser.value = null
+                    _error.value = "Usuario deshabilitado. Contacte al administrador."
+                    return@launch
+                }
+                
                 _currentUser.value = user
                 _isAuthenticated.value = true
                 // Guardar la sesión
@@ -82,6 +91,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             putString("email", user.email)
             putLong("role_id", user.role_id)
             putLong("setting_id", user.setting_id ?: 0L)
+            putBoolean("enabled", user.enabled)
             apply()
         }
     }
@@ -95,6 +105,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val email = sharedPreferences.getString("email", "") ?: ""
                 val roleId = sharedPreferences.getLong("role_id", 0L)
                 val settingId = sharedPreferences.getLong("setting_id", 0L)
+                val enabled = sharedPreferences.getBoolean("enabled", true)
                 
                 val user = User(
                     id = userId,
@@ -102,7 +113,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     email = email,
                     password = "", // No almacenamos la contraseña
                     role_id = roleId,
-                    setting_id = settingId
+                    setting_id = settingId,
+                    enabled = enabled
                 )
                 Log.d("AuthViewModel", "Restoring session for user: $user")
                 _currentUser.value = user

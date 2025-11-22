@@ -27,4 +27,6 @@ class UserRepository {
             throw Exception("Error al iniciar sesión: ${e.localizedMessage ?: e.message}")
         }
     }
+
+    suspend fun toggleEnabled(id: Long): User = service.toggleUserEnabled(id)
 }

@@ -30,4 +30,7 @@ interface UserApiService {
 
     @GET("/api/user-details/role/{roleId}")
     suspend fun getUserDetailsByRole(@Path("roleId") roleId: Long): List<UserDetail>
+
+    @PATCH("/api/users/{id}/toggle-enabled")
+    suspend fun toggleUserEnabled(@Path("id") id: Long): User
 }

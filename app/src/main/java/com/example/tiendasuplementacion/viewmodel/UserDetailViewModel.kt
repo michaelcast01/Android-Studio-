@@ -4,10 +4,9 @@ import androidx.lifecycle.*
 import com.example.tiendasuplementacion.model.UserDetail
 import com.example.tiendasuplementacion.repository.UserDetailRepository
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.ZoneOffset
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
 
 class UserDetailViewModel : ViewModel() {
     private val repository = UserDetailRepository()
@@ -43,28 +42,35 @@ class UserDetailViewModel : ViewModel() {
         }
     }
 
-    private fun parseOrderDateOrFallback(dateStr: String?, orderId: Long): Instant {
-        if (dateStr.isNullOrBlank()) return Instant.ofEpochMilli(orderId)
-        // Intentar parse ISO primero
-        val candidates = listOf(
-            DateTimeFormatter.ISO_INSTANT,
-            DateTimeFormatter.ISO_OFFSET_DATE_TIME,
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    private fun parseOrderDateOrFallback(dateStr: String?, orderId: Long): Long {
+        if (dateStr.isNullOrBlank()) return orderId
+        
+        // Formatos de fecha a intentar
+        val dateFormats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", Locale.US), // ISO con microsegundos
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US),         // ISO básico
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US),           // ISO con zona
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US),              // Formato simple
+            SimpleDateFormat("yyyy-MM-dd", Locale.US)                        // Solo fecha
         )
-        for (fmt in candidates) {
+        
+        for (format in dateFormats) {
             try {
-                val temporal = fmt.parse(dateStr)
-                return Instant.from(temporal)
-            } catch (_: DateTimeParseException) {
-                // intentar siguiente
+                val date = format.parse(dateStr)
+                if (date != null) {
+                    return date.time
+                }
+            } catch (_: Exception) {
+                // Intentar siguiente formato
             }
         }
-        // Ultimo recurso: intentar parsear como epoch millis
+        
+        // Último recurso: intentar parsear como epoch millis
         return try {
-            Instant.ofEpochMilli(dateStr.toLong())
+            dateStr.toLong()
         } catch (_: Exception) {
-            // Fallback: usar orderId como semilla para mantener orden estable
-            Instant.ofEpochMilli(orderId)
+            // Fallback: usar orderId para mantener orden estable
+            orderId
         }
     }
 

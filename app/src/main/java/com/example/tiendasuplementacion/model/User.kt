@@ -6,5 +6,6 @@ data class User(
     val email: String,
     val password: String,
     val role_id: Long,
-    val setting_id: Long? = null
+    val setting_id: Long? = null,
+    val enabled: Boolean = true
 )
