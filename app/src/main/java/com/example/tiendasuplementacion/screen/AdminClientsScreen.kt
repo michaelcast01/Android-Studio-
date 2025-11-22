@@ -1017,7 +1017,7 @@ fun OptimizedClientCard(
     val userEnabled = users.find { it.id == userDetail.id }?.enabled ?: true
     var showToggleDialog by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1045,7 +1045,6 @@ fun OptimizedClientCard(
                         .weight(1f)
                         .clickable { onClick() }
                 ) {
-                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = userDetail.username,
                         style = MaterialTheme.typography.titleMedium,
@@ -1072,7 +1071,7 @@ fun OptimizedClientCard(
                             )
                         }
                     }
-                    
+
                     // Indicador de estado habilitado/deshabilitado
                     if (!userEnabled) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -1101,7 +1100,7 @@ fun OptimizedClientCard(
                         }
                     }
                 }
-                
+
                 // Columna de acciones (status + botón)
                 Column(
                     horizontalAlignment = Alignment.End,
@@ -1109,30 +1108,30 @@ fun OptimizedClientCard(
                 ) {
                     // Status indicator
                     val statusColor = when {
-                        !userEnabled -> Color(0xFFf44336) // Rojo si está deshabilitado
+                        !userEnabled -> Color(0xFFf44336)
                         stats.totalOrders == 0 -> Color(0xFF757575)
                         stats.lastOrderDate.contains("2025-09") -> Color(0xFF4CAF50)
                         stats.totalOrders > 5 -> Color(0xFF2196F3)
                         else -> Color(0xFFFF9800)
                     }
-                    
+
                     Surface(
                         color = statusColor,
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.size(12.dp)
                     ) {}
-                    
+
                     // Botón de toggle enabled/disabled
                     IconButton(
-                        onClick = { 
+                        onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            showToggleDialog = true 
+                            showToggleDialog = true
                         },
                         modifier = Modifier
                             .size(36.dp)
                             .background(
-                                color = if (userEnabled) Color(0xFFf44336).copy(alpha = 0.15f) 
-                                       else Color(0xFF4CAF50).copy(alpha = 0.15f),
+                                color = if (userEnabled) Color(0xFFf44336).copy(alpha = 0.15f)
+                                else Color(0xFF4CAF50).copy(alpha = 0.15f),
                                 shape = RoundedCornerShape(8.dp)
                             )
                     ) {
@@ -1145,9 +1144,9 @@ fun OptimizedClientCard(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Stats row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1171,7 +1170,7 @@ fun OptimizedClientCard(
                     )
                 }
             }
-            
+
             // Status breakdown si tiene pedidos
             if (stats.statusBreakdown.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1186,7 +1185,7 @@ fun OptimizedClientCard(
             }
         }
     }
-    
+
     // Diálogo de confirmación para toggle desde la tarjeta
     if (showToggleDialog) {
         AlertDialog(
@@ -1200,9 +1199,9 @@ fun OptimizedClientCard(
             },
             text = {
                 Text(
-                    text = if (userEnabled) 
-                        "El usuario ${userDetail.username} no podrá iniciar sesión si lo deshabilitas." 
-                    else 
+                    text = if (userEnabled)
+                        "El usuario ${userDetail.username} no podrá iniciar sesión si lo deshabilitas."
+                    else
                         "El usuario ${userDetail.username} podrá iniciar sesión nuevamente.",
                     color = Color(0xFF1A1A1A)
                 )
