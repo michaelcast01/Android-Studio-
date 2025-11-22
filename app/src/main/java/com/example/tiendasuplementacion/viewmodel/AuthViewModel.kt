@@ -53,10 +53,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 _isAuthenticated.value = false
                 _currentUser.value = null
-                _error.value = if (e.message?.contains("404") == true) {
-                    "Usuario o contraseña incorrectos"
-                } else {
-                    e.message ?: "Error al iniciar sesión"
+                
+                // Extraer el mensaje personalizado según el código HTTP
+                val message = e.message ?: "Error al iniciar sesión"
+                _error.value = when {
+                    message.startsWith("404:") -> message.substringAfter("404:")
+                    message.startsWith("423:") -> message.substringAfter("423:")
+                    message.startsWith("401:") -> message.substringAfter("401:")
+                    else -> message
                 }
             }
         }

@@ -22,9 +22,17 @@ class UserRepository {
                 "password" to password
             )
             service.login(credentials).user
+        } catch (e: retrofit2.HttpException) {
+            android.util.Log.e("UserRepository", "Error HTTP en login: ${e.code()}", e)
+            when (e.code()) {
+                404 -> throw Exception("404:El correo electrónico no está registrado")
+                423 -> throw Exception("423:Tu cuenta está deshabilitada. Contacta al administrador")
+                401 -> throw Exception("401:Contraseña incorrecta")
+                else -> throw Exception("Error al iniciar sesión: ${e.message()}")
+            }
         } catch (e: Exception) {
             android.util.Log.e("UserRepository", "Error en login: ${e.message}", e)
-            throw Exception("Error al iniciar sesión: ${e.localizedMessage ?: e.message}")
+            throw e
         }
     }
 
